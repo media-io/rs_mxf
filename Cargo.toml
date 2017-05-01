@@ -1,12 +1,13 @@
 [package]
 name = "mxf"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Marc-Antoine Arnaud <arnaud.marcantoine@gmail.com>"]
 description = """
 Library to read/write following SMPTE 377M (MXF) standard.
 """
 license = "MIT"
 repository = "https://github.com/media-io/rs_mxf"
+documentation = "https://docs.rs/mxf"
 
 [dependencies]
 byteorder = "1.0.0"
