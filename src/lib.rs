@@ -2,7 +2,7 @@
 extern crate byteorder;
 
 pub mod klv;
-mod serializer;
+pub mod serializer;
 
 #[cfg(test)]
 mod test {
