@@ -2,7 +2,7 @@
 use byteorder::{ByteOrder, BigEndian, WriteBytesExt};
 use serializer::encoder::*;
 
-use std::io::{Read, BufReader};
+use std::io::Read;
 
 #[derive(Debug)]
 pub struct Length {
@@ -39,7 +39,7 @@ impl Encoder for Length {
   }
 }
 
-pub fn parse<R: Read>(stream: &mut BufReader<R>) -> Result<Option<Length>, String> {
+pub fn parse<R: Read>(stream: &mut R) -> Result<Option<Length>, String> {
   let mut length = vec![0; 1];
   try!(stream.read_exact(&mut length).map_err(|e| e.to_string()));
 

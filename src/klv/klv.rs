@@ -5,9 +5,9 @@ use klv::key::*;
 use klv::value::*;
 use klv::length::*;
 
-use std::io::{Read, BufReader, Seek, SeekFrom};
+use std::io::{Read, Seek, SeekFrom};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Klv {
   pub key: Key,
   pub value: Value
@@ -28,13 +28,12 @@ impl Encoder for Klv {
   }
 }
 
-pub fn next_klv<R: Read + Seek>(mut stream: &mut BufReader<R>) -> Result<Option<Klv>, String>
+pub fn next_klv<R: Read + Seek>(mut stream: &mut R) -> Result<Option<Klv>, String>
 {
   let mut identifier_data = vec![0; 16];
   try!(stream.read_exact(&mut identifier_data).map_err(|e| e.to_string()));
   let key = parse_key(identifier_data);
   let length = parse(&mut stream).unwrap().unwrap();
-
   let address = stream.seek(SeekFrom::Current(0)).unwrap();
 
   let mut data = vec![0; length.value];

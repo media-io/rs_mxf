@@ -6,7 +6,7 @@ fn get_smpte_identifier() -> Vec<u8> {
   vec![0x06, 0x0e, 0x2b, 0x34]
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ElementIdentifier {
   PartitionMajor,
   PartitionMinor,
@@ -32,12 +32,12 @@ pub enum ElementIdentifier {
   },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Element {
   pub identifier: ElementIdentifier
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Value {
   pub elements: Vec<Element>
 }

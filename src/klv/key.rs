@@ -1,7 +1,7 @@
 
 use serializer::encoder::*;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum KeyIdentifier {
   HeaderPartition,
   BodyPartition,
@@ -60,7 +60,7 @@ pub enum KeyIdentifier {
   Unknown,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Key {
   pub identifier: KeyIdentifier
 }
