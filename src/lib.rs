@@ -52,9 +52,9 @@ mod test {
   #[test]
   fn generate_file() {
     use std::io::prelude::*;
-    use std::fs::File;
 
-    let mut buffer = File::create("tmp.mxf").unwrap();
+    use std::io::Cursor;
+    let mut buffer = Cursor::new(vec![0; 0]);
 
     let header_key = Key {
       identifier: KeyIdentifier::HeaderPartition
@@ -133,7 +133,6 @@ mod test {
 
     buffer.write(Encoder::serialise(&static_track_klv).as_ref()).unwrap();
 
-
     let frame_key = Key {
       identifier: KeyIdentifier::PictureItemMpegFrameWrappedPictureElement
     };
@@ -152,8 +151,6 @@ mod test {
     };
 
     buffer.write(Encoder::serialise(&frame_klv).as_ref()).unwrap();
-
-
-    assert!(true);
+    assert_eq!(buffer.get_ref().len(), 2165);
   }
 }
