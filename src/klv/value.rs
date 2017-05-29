@@ -2,25 +2,34 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use serializer::encoder::*;
 
+use klv::tag::*;
+use klv::essence_identifiers::*;
+
 fn get_smpte_identifier() -> Vec<u8> {
   vec![0x06, 0x0e, 0x2b, 0x34]
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ElementIdentifier {
-  PartitionMajor,
-  PartitionMinor,
-  PartitionKagSize {size: u32},
-  PartitionThisPartition {offset: u64},
-  PartitionPreviousPartition {offset: u64},
-  PartitionFooterPartition {offset: u64},
-  PartitionHeaderByteCount {size: u64},
-  PartitionIndexByteCount {index: u64},
-  PartitionIndexSid,
-  PartitionByteOffset,
-  PartitionBodySid,
-  PartitionOperationalPattern{item_complexity: u8, package_complexity: char},
-  PartitionEssenceContainers,
+  PartitionMajor{ value: u16 },
+  PartitionMinor{ value: u16 },
+  PartitionKagSize{ size: u32 },
+  PartitionThisPartition{ offset: u64 },
+  PartitionPreviousPartition{ offset: u64 },
+  PartitionFooterPartition{ offset: u64 },
+  PartitionHeaderByteCount{ size: u64 },
+  PartitionIndexByteCount{ size: u64 },
+  PartitionIndexSid{ value: u32 },
+  PartitionByteOffset{ offset: u64 },
+  PartitionBodySid{ value: u32 },
+  PartitionOperationalPattern{
+    item_complexity: u8,
+    package_complexity: char,
+    internal_essence: bool,
+    stream_file: bool,
+    uni_track: bool,
+  },
+  PartitionEssenceContainers{essences: Vec<EssenceIdentifier>},
   InstanceUid {uuid: Vec<u8>},
   // PackageUid {umid: Vec<u8>},
   GenerationUid {uuid: Vec<u8>},
@@ -47,11 +56,11 @@ impl Encoder for Value {
     let mut result = vec![];
     for element in self.elements.clone() {
       match element.identifier {
-        ElementIdentifier::PartitionMajor => {
-          result.write_u16::<BigEndian>(1).unwrap();
+        ElementIdentifier::PartitionMajor{value} => {
+          result.write_u16::<BigEndian>(value).unwrap();
         },
-        ElementIdentifier::PartitionMinor => {
-          result.write_u16::<BigEndian>(3).unwrap();
+        ElementIdentifier::PartitionMinor{value} => {
+          result.write_u16::<BigEndian>(value).unwrap();
         },
         ElementIdentifier::PartitionKagSize{size} => {
           result.write_u32::<BigEndian>(size).unwrap();
@@ -68,25 +77,28 @@ impl Encoder for Value {
         ElementIdentifier::PartitionHeaderByteCount{size} => {
           result.write_u64::<BigEndian>(size).unwrap();
         },
-        ElementIdentifier::PartitionIndexByteCount{index} => {
-          result.write_u64::<BigEndian>(index).unwrap();
+        ElementIdentifier::PartitionIndexByteCount{size} => {
+          result.write_u64::<BigEndian>(size).unwrap();
         },
-        ElementIdentifier::PartitionIndexSid => {
-          result.write_u32::<BigEndian>(0).unwrap();
+        ElementIdentifier::PartitionIndexSid{value} => {
+          result.write_u32::<BigEndian>(value).unwrap();
         },
-        ElementIdentifier::PartitionByteOffset => {
-          result.write_u64::<BigEndian>(0).unwrap();
+        ElementIdentifier::PartitionByteOffset{offset} => {
+          result.write_u64::<BigEndian>(offset).unwrap();
         },
-        ElementIdentifier::PartitionBodySid => {
-          result.write_u32::<BigEndian>(0).unwrap();
+        ElementIdentifier::PartitionBodySid{value} => {
+          result.write_u32::<BigEndian>(value).unwrap();
         },
-        ElementIdentifier::PartitionOperationalPattern{item_complexity, package_complexity} => {
+        ElementIdentifier::PartitionOperationalPattern{item_complexity, package_complexity, internal_essence, stream_file, uni_track} => {
           let mut op = serialise_operational_pattern(item_complexity, package_complexity);
           result.append(&mut op);
         },
-        ElementIdentifier::PartitionEssenceContainers => {
-          result.write_u64::<BigEndian>(0).unwrap();
-          result.write_u64::<BigEndian>(0).unwrap();
+        ElementIdentifier::PartitionEssenceContainers{essences} => {
+          result.write_u32::<BigEndian>(essences.len() as u32).unwrap();
+          result.write_u32::<BigEndian>(16).unwrap();
+          for ul in essences {
+            // TODO wrote essence UL
+          }
         },
         ElementIdentifier::InstanceUid{uuid} => {
           let tag = Tag{id: [0x3c, 0x0a], data: uuid};
@@ -129,20 +141,30 @@ fn serialise_operational_pattern(item_complexity: u8, package_complexity: char) 
   result
 }
 
-pub struct Tag {
-  pub id: [u8; 2],
-  pub data: Vec<u8>
-}
+pub fn parse_operational_pattern(data: Vec<u8>) -> Option<ElementIdentifier> {
+  match (data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]) {
+    (0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, item_complexity, package_complexity_value, flags, _reserved) => {
 
-impl Encoder for Tag {
-  fn serialise(&self) -> Vec<u8> {
-    let mut result = vec![];
-    let mut t = self.data.clone();
-    result.push(self.id[0]);
-    result.push(self.id[1]);
+      let package_complexity =
+        match package_complexity_value {
+          0x01 => {'a'},
+          0x02 => {'b'},
+          0x03 => {'c'},
+          _ => {' '}
+        };
 
-    result.write_u16::<BigEndian>(t.len() as u16).unwrap();
-    result.append(&mut t);
-    result
+      Some(
+        ElementIdentifier::PartitionOperationalPattern{
+          item_complexity: item_complexity,
+          package_complexity: package_complexity,
+          internal_essence: ((flags & 0b00000010) == 0),
+          stream_file: ((flags & 0b00000100) == 0),
+          uni_track: ((flags & 0b00001000) == 0),
+        }
+      )
+    },
+    (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => {
+      None
+    }
   }
 }

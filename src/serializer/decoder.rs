@@ -1,6 +1,6 @@
 
-use std::io::{Read, BufReader};
+use std::io::{Read};
 
 pub trait Decoder {
-  fn deserialize<Type, R: Read>(&self, stream: &mut BufReader<R>) -> Vec<Type>;
+  fn deserialize<Type, R: Read>(&self, stream: &mut R) -> Vec<Type>;
 }

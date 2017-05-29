@@ -4,6 +4,8 @@ use serializer::encoder::*;
 use klv::key::*;
 use klv::value::*;
 use klv::length::*;
+use klv::tag::*;
+use klv::partition::*;
 
 use std::io::{Read, Seek, SeekFrom};
 
@@ -36,19 +38,30 @@ pub fn next_klv<R: Read + Seek>(mut stream: &mut R) -> Result<Option<Klv>, Strin
   let length = parse(&mut stream).unwrap().unwrap();
   let address = stream.seek(SeekFrom::Current(0)).unwrap();
 
-  let mut data = vec![0; length.value];
-  try!(stream.read_exact(&mut data).map_err(|e| e.to_string()));
-
   let identifier = ElementIdentifier::ContentData {
     address: address as usize,
     size: length.value
   };
 
+  let elements =
+    match key.identifier {
+      KeyIdentifier::HeaderPartition |
+      KeyIdentifier::BodyPartition |
+      KeyIdentifier::FooterPartition => {
+        parse_partition(&mut stream).unwrap()
+      },
+      _ => {
+        let _new_address = stream.seek(SeekFrom::Current(length.value as i64)).unwrap();
+        vec![
+          Element{
+            identifier: identifier
+          }
+        ]
+      },
+    };
+
   let value = Value{
-    elements: vec![
-      Element{
-        identifier: identifier
-      }]
+    elements: elements
   };
 
   let klv = Klv{
