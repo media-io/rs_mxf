@@ -4,7 +4,6 @@ use serializer::encoder::*;
 use klv::key::*;
 use klv::value::*;
 use klv::length::*;
-use klv::tag::*;
 use klv::partition::*;
 
 use std::io::{Read, Seek, SeekFrom};
@@ -45,9 +44,9 @@ pub fn next_klv<R: Read + Seek>(mut stream: &mut R) -> Result<Option<Klv>, Strin
 
   let elements =
     match key.identifier {
-      KeyIdentifier::HeaderPartition |
-      KeyIdentifier::BodyPartition |
-      KeyIdentifier::FooterPartition => {
+      KeyIdentifier::HeaderPartition{status: _} |
+      KeyIdentifier::BodyPartition{status: _} |
+      KeyIdentifier::FooterPartition{status: _} => {
         parse_partition(&mut stream).unwrap()
       },
       _ => {

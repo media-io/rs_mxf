@@ -1,10 +1,6 @@
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{BigEndian, WriteBytesExt};
 use serializer::encoder::*;
-use klv::value::*;
-use klv::essence_identifiers::*;
-
-use std::io::Read;
 
 pub struct Tag {
   pub id: [u8; 2],

@@ -90,13 +90,13 @@ impl Encoder for Value {
           result.write_u32::<BigEndian>(value).unwrap();
         },
         ElementIdentifier::PartitionOperationalPattern{item_complexity, package_complexity, internal_essence, stream_file, uni_track} => {
-          let mut op = serialise_operational_pattern(item_complexity, package_complexity);
+          let mut op = serialise_operational_pattern(item_complexity, package_complexity, internal_essence, stream_file, uni_track);
           result.append(&mut op);
         },
         ElementIdentifier::PartitionEssenceContainers{essences} => {
           result.write_u32::<BigEndian>(essences.len() as u32).unwrap();
           result.write_u32::<BigEndian>(16).unwrap();
-          for ul in essences {
+          for _ul in essences {
             // TODO wrote essence UL
           }
         },
@@ -123,7 +123,7 @@ impl Encoder for Value {
   }
 }
 
-fn serialise_operational_pattern(item_complexity: u8, package_complexity: char) -> Vec<u8> {
+fn serialise_operational_pattern(item_complexity: u8, package_complexity: char, internal_essence: bool, stream_file: bool, uni_track: bool) -> Vec<u8> {
   let mut result = get_smpte_identifier();
   let mut op_identifier = vec![0x04, 0x01, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01];
 
@@ -136,7 +136,12 @@ fn serialise_operational_pattern(item_complexity: u8, package_complexity: char) 
     _ => panic!("unsupported package complexity")
   };
 
-  result.push(0x00);
+  let mut flags = 0x01;
+  flags += (uni_track as u8) << 4;
+  flags += (stream_file as u8) << 3;
+  flags += (internal_essence as u8) << 2;
+
+  result.push(flags);
   result.push(0x00);
   result
 }

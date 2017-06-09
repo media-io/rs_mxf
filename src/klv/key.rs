@@ -1,11 +1,13 @@
 
 use serializer::encoder::*;
+use klv::partition::*;
+use klv::ul::*;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum KeyIdentifier {
-  HeaderPartition,
-  BodyPartition,
-  FooterPartition,
+  HeaderPartition{status: PartitionStatus},
+  BodyPartition{status: PartitionStatus},
+  FooterPartition{status: PartitionStatus},
   PrimerPack,
   RandomIndexMetadata,
 
@@ -69,54 +71,16 @@ fn get_smpte_identifier() -> Vec<u8> {
   vec![0x06, 0x0e, 0x2b, 0x34]
 }
 
-fn get_partition_key(identifier: &KeyIdentifier) -> Vec<u8> {
-  let id =
-    match *identifier {
-      KeyIdentifier::HeaderPartition => 0x02,
-      KeyIdentifier::BodyPartition => 0x03,
-      KeyIdentifier::FooterPartition => 0x04,
-      KeyIdentifier::PrimerPack => 0x04,
-      KeyIdentifier::RandomIndexMetadata => 0x11,
-      _ => panic!("Unknown key identifier"),
-    };
-
-  let mut partition_id = vec![0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, id, 0x00, 0x00];
-  let mut smpte_identifier = get_smpte_identifier();
-  smpte_identifier.append(&mut partition_id);
-  smpte_identifier
-}
-
 impl Encoder for Key {
   fn serialise(&self) -> Vec<u8> {
     match self.identifier {
-      KeyIdentifier::HeaderPartition |
-      KeyIdentifier::BodyPartition |
-      KeyIdentifier::FooterPartition =>
-        get_partition_key(&self.identifier),
-      KeyIdentifier::StaticTrack => {
-        let mut partition_id = vec![0x02, 0x53, 0x01, 0x01, 0x0d, 0x01, 0x01, 0x01, 0x01, 0x01, 0x3a, 0x00];
-        let mut smpte_identifier = get_smpte_identifier();
-        smpte_identifier.append(&mut partition_id);
-        smpte_identifier
-      },
-      KeyIdentifier::PictureItemMpegFrameWrappedPictureElement => {
-        let mut frame_id = vec![0x01, 0x02, 0x01, 0x01, 0x0d, 0x01, 0x03, 0x01, 0x15, 0x01, 0x05, 0x00];
-        let mut smpte_identifier = get_smpte_identifier();
-        smpte_identifier.append(&mut frame_id);
-        smpte_identifier
-      },
-      KeyIdentifier::Jpeg2000FrameWrapped => {
-        let mut frame_id = vec![0x01, 0x02, 0x01, 0x01, 0x0d, 0x01, 0x03, 0x01, 0x15, 0x01, 0x08, 0x00];
-        let mut smpte_identifier = get_smpte_identifier();
-        smpte_identifier.append(&mut frame_id);
-        smpte_identifier
-      },
-      KeyIdentifier::Jpeg2000ClipWrapped => {
-        let mut frame_id = vec![0x01, 0x02, 0x01, 0x01, 0x0d, 0x01, 0x03, 0x01, 0x15, 0x01, 0x09, 0x00];
-        let mut smpte_identifier = get_smpte_identifier();
-        smpte_identifier.append(&mut frame_id);
-        smpte_identifier
-      },
+      KeyIdentifier::HeaderPartition{ref status} => vec_ul!(Ul::HeaderPartition, *status),
+      KeyIdentifier::BodyPartition{ref status} => vec_ul!(Ul::BodyPartition, *status),
+      KeyIdentifier::FooterPartition{ref status} => vec_ul!(Ul::FooterPartition, *status),
+      KeyIdentifier::StaticTrack => vec_ul!(Ul::StaticTrack),
+      KeyIdentifier::PictureItemMpegFrameWrappedPictureElement => vec_ul!(Ul::PictureItemMpegFrameWrappedPictureElement, 0x00),
+      KeyIdentifier::Jpeg2000FrameWrapped => vec_ul!(Ul::Jpeg2000FrameWrapped, 0x00),
+      KeyIdentifier::Jpeg2000ClipWrapped => vec_ul!(Ul::Jpeg2000ClipWrapped, 0x00),
       KeyIdentifier::FillItem => {
         let mut id = vec![0x01, 0x01, 0x01, 0x02, 0x03, 0x01, 0x02, 0x10, 0x01, 0x00, 0x00, 0x00];
         let mut smpte_identifier = get_smpte_identifier();
@@ -177,19 +141,22 @@ pub fn parse_key(data: Vec<u8>) -> Key {
   // println!("{:?}", data);
 
   match (data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]) {
-    (0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x02,    _, 0x00) => {
-      Key {identifier: KeyIdentifier::HeaderPartition}
+    ul_filter!(Ul::HeaderPartition) => {
+      let status = parse_status(data[14]);
+      Key {identifier: KeyIdentifier::HeaderPartition{status: status}}
     },
-    (0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x03,    _, 0x00) => {
-      Key {identifier: KeyIdentifier::BodyPartition}
+    ul_filter!(Ul::BodyPartition) => {
+      let status = parse_status(data[14]);
+      Key {identifier: KeyIdentifier::BodyPartition{status: status}}
     },
-    (0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x04,    _, 0x00) => {
-      Key {identifier: KeyIdentifier::FooterPartition}
+    ul_filter!(Ul::FooterPartition) => {
+      let status = parse_status(data[14]);
+      Key {identifier: KeyIdentifier::FooterPartition{status: status}}
     },
-    (0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x05,    _, 0x00) => {
+    ul_filter!(Ul::PrimerPack) => {
       Key {identifier: KeyIdentifier::PrimerPack}
     },
-    (0x06, 0x0e, 0x2b, 0x34, 0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x11,    _, 0x00) => {
+    ul_filter!(Ul::RandomIndexMetadata) => {
       Key {identifier: KeyIdentifier::RandomIndexMetadata}
     },
     (0x06, 0x0e, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x02, 0x03, 0x01, 0x02, 0x10, 0x01, 0x00, 0x00, 0x00) => {
