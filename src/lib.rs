@@ -201,7 +201,7 @@ mod test {
     stream.write(Encoder::serialise(&header_klv).as_ref()).unwrap();
 
     let static_track_key = Key {
-      identifier: KeyIdentifier::StaticTrack
+      identifier: KeyIdentifier::StaticTrackSet
     };
 
     let static_track_value = Value {

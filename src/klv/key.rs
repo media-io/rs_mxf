@@ -11,8 +11,6 @@ pub enum KeyIdentifier {
   PrimerPack,
   RandomIndexMetadata,
 
-  StaticTrack,
-
   SystemItemElement,
   IndexTableSegment,
 
@@ -67,32 +65,49 @@ pub struct Key {
   pub identifier: KeyIdentifier
 }
 
-fn get_smpte_identifier() -> Vec<u8> {
-  vec![0x06, 0x0e, 0x2b, 0x34]
-}
-
 impl Encoder for Key {
   fn serialise(&self) -> Vec<u8> {
     match self.identifier {
       KeyIdentifier::HeaderPartition{ref status} => vec_ul!(Ul::HeaderPartition, *status),
       KeyIdentifier::BodyPartition{ref status} => vec_ul!(Ul::BodyPartition, *status),
       KeyIdentifier::FooterPartition{ref status} => vec_ul!(Ul::FooterPartition, *status),
-      KeyIdentifier::StaticTrack => vec_ul!(Ul::StaticTrack),
+      
+      KeyIdentifier::SequenceSet => vec_ul!(Ul::SequenceSet),
+      KeyIdentifier::SourceClipSet => vec_ul!(Ul::SourceClipSet),
+      KeyIdentifier::TimecodeComponentSet => vec_ul!(Ul::TimecodeComponentSet),
+      KeyIdentifier::ContentStorageSet => vec_ul!(Ul::ContentStorageSet),
+      KeyIdentifier::EssenceContainerDataSet => vec_ul!(Ul::EssenceContainerDataSet),
+      KeyIdentifier::FileDescriptorSet => vec_ul!(Ul::FileDescriptorSet),
+      KeyIdentifier::GenericPictureEssenceDescriptor => vec_ul!(Ul::GenericPictureEssenceDescriptor),
+      KeyIdentifier::CdciVideoDescriptor => vec_ul!(Ul::CdciVideoDescriptor),
+      KeyIdentifier::RgbaVideoDescriptor => vec_ul!(Ul::RgbaVideoDescriptor),
+      KeyIdentifier::PrefaceSet => vec_ul!(Ul::PrefaceSet),
+      KeyIdentifier::IdentificationSet => vec_ul!(Ul::IdentificationSet),
+      KeyIdentifier::NetworkLocatorSet => vec_ul!(Ul::NetworkLocatorSet),
+      KeyIdentifier::TextLocatorSet => vec_ul!(Ul::TextLocatorSet),
+      KeyIdentifier::MaterialPackageSet => vec_ul!(Ul::MaterialPackageSet),
+      KeyIdentifier::FilePackageSet => vec_ul!(Ul::FilePackageSet),
+      KeyIdentifier::StaticTrackSet => vec_ul!(Ul::StaticTrackSet),
+      KeyIdentifier::TrackSet => vec_ul!(Ul::TrackSet),
+      KeyIdentifier::EventTrackSet => vec_ul!(Ul::EventTrackSet),
+      KeyIdentifier::DmSegmentDescriptorSet => vec_ul!(Ul::DmSegmentDescriptorSet),
+      KeyIdentifier::GenericSoundEssenceDescriptorSet => vec_ul!(Ul::GenericSoundEssenceDescriptorSet),
+      KeyIdentifier::GenericDataEssenceDescriptorSet => vec_ul!(Ul::GenericDataEssenceDescriptorSet),
+      KeyIdentifier::MultipleDescriptorSet => vec_ul!(Ul::MultipleDescriptorSet),
+      KeyIdentifier::DmSourceClipSet => vec_ul!(Ul::DmSourceClipSet),
+      KeyIdentifier::Aes3AudioDescriptorSet => vec_ul!(Ul::Aes3AudioDescriptorSet),
+      KeyIdentifier::WaveAudioDescriptorSet => vec_ul!(Ul::WaveAudioDescriptorSet),
+      KeyIdentifier::MpegVideoDescriptorSet => vec_ul!(Ul::MpegVideoDescriptorSet),
+      KeyIdentifier::Jpeg2000SubDescriptorSet => vec_ul!(Ul::Jpeg2000SubDescriptorSet),
+      KeyIdentifier::McaLabelSubDescriptorSet => vec_ul!(Ul::McaLabelSubDescriptorSet),
+      KeyIdentifier::AudioChannelLabelSubDescriptorSet => vec_ul!(Ul::AudioChannelLabelSubDescriptorSet),
+      KeyIdentifier::SoundfieldGroupLabelSubDescriptorSet => vec_ul!(Ul::SoundfieldGroupLabelSubDescriptorSet),
+      
       KeyIdentifier::PictureItemMpegFrameWrappedPictureElement => vec_ul!(Ul::PictureItemMpegFrameWrappedPictureElement, 0x00),
       KeyIdentifier::Jpeg2000FrameWrapped => vec_ul!(Ul::Jpeg2000FrameWrapped, 0x00),
       KeyIdentifier::Jpeg2000ClipWrapped => vec_ul!(Ul::Jpeg2000ClipWrapped, 0x00),
-      KeyIdentifier::FillItem => {
-        let mut id = vec![0x01, 0x01, 0x01, 0x02, 0x03, 0x01, 0x02, 0x10, 0x01, 0x00, 0x00, 0x00];
-        let mut smpte_identifier = get_smpte_identifier();
-        smpte_identifier.append(&mut id);
-        smpte_identifier
-      },
-      KeyIdentifier::FillItemAvid => {
-        let mut id = vec![0x01, 0x01, 0x01, 0x01, 0x03, 0x01, 0x02, 0x10, 0x01, 0x00, 0x00, 0x00];
-        let mut smpte_identifier = get_smpte_identifier();
-        smpte_identifier.append(&mut id);
-        smpte_identifier
-      },
+      KeyIdentifier::FillItem => vec_ul!(Ul::FillItem),
+      KeyIdentifier::FillItemAvid => vec_ul!(Ul::FillItemAvid),
       KeyIdentifier::Unknown => panic!("Unknown key identifier"),
       _ => {
         unimplemented!();
@@ -159,14 +174,14 @@ pub fn parse_key(data: Vec<u8>) -> Key {
     ul_filter!(Ul::RandomIndexMetadata) => {
       Key {identifier: KeyIdentifier::RandomIndexMetadata}
     },
-    (0x06, 0x0e, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x02, 0x03, 0x01, 0x02, 0x10, 0x01, 0x00, 0x00, 0x00) => {
+    ul_filter!(Ul::FillItem) => {
       Key {identifier: KeyIdentifier::FillItem}
     },
-    (0x06, 0x0e, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x01, 0x03, 0x01, 0x02, 0x10, 0x01, 0x00, 0x00, 0x00) => {
+    ul_filter!(Ul::FillItemAvid) => {
       Key {identifier: KeyIdentifier::FillItemAvid}
     },
-    (0x06, 0x0e, 0x2b, 0x34, 0x02, 0x53, 0x01, 0x01, 0x0d, 0x01, 0x01, 0x01, 0x01, 0x01, kind, 0x00) => {
-      Key {identifier: get_set_kind(kind)}
+    ul_filter!(SmpteRegitery::Set) => {
+      Key {identifier: get_set_kind(data[14])}
     },
     (0x06, 0x0e, 0x2b, 0x34, 0x02, 0x53, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x10, 0x01, 0x00) => {
       Key {identifier: KeyIdentifier::IndexTableSegment}
