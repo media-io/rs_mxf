@@ -24,18 +24,10 @@ pub fn partition_status_value(status: PartitionStatus) -> u8 {
 
 #[macro_export]
 macro_rules! partition_status_value {
-  (PartitionStatus::OpenAndIncomplete) => (
-    0x01
-  );
-  (PartitionStatus::ClosedAndIncomplete) => (
-    0x02
-  );
-  (PartitionStatus::OpenAndComplete) => (
-    0x03
-  );
-  (PartitionStatus::ClosedAndComplete) => (
-    0x04
-  );
+  (PartitionStatus::OpenAndIncomplete) => (0x01);
+  (PartitionStatus::ClosedAndIncomplete) => (0x02);
+  (PartitionStatus::OpenAndComplete) => (0x03);
+  (PartitionStatus::ClosedAndComplete) => (0x04);
 }
 
 pub fn parse_status(s: u8) -> PartitionStatus {

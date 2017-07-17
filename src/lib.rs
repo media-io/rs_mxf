@@ -8,9 +8,10 @@ pub mod serializer;
 mod test {
   // use serializer::decoder::*;
   use serializer::encoder::*;
-  use klv::partition::*;
   use klv::klv::*;
-  use klv::key::*;
+  use klv::key::partition::*;
+  use klv::key::dict::*;
+  use klv::key::key::Key;
   use klv::value::*;
   use klv::essence_identifiers::*;
 

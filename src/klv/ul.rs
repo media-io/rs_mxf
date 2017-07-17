@@ -117,6 +117,9 @@ macro_rules! ul_filter {
   (Ul::RandomIndexMetadata) => (partition_identifier!(Ul::RandomIndexMetadata));
   (Ul::FillItem) => (smpte_identifier!(SmpteRegitery::Fill, 0x02));
   (Ul::FillItemAvid) => (smpte_identifier!(SmpteRegitery::Fill, 0x01));
+  (Ul::PictureItemMpegFrameWrappedPictureElement) => (smpte_identifier!(SmpteRegitery::Essence, 0x15, 0x05));
+  (Ul::Jpeg2000FrameWrapped) => (smpte_identifier!(SmpteRegitery::Essence, 0x15, 0x08));
+  (Ul::Jpeg2000ClipWrapped) => (smpte_identifier!(SmpteRegitery::Essence, 0x15, 0x09));
   (SmpteRegitery::Set) => (smpte_identifier!(SmpteRegitery::Set));
 }
 
@@ -171,7 +174,10 @@ macro_rules! smpte_identifier {
     smpte_identifier!(0x02, 0x53, 0x01, 0x01, 0x0d, 0x01, 0x01, 0x01, 0x01, 0x01, _, 0x00)
   );
   (SmpteRegitery::Essence, $x:tt, $y:tt, $stream:tt) => (
-    smpte_identifier!(0x02, 0x02, 0x01, 0x01, 0x0d, 0x01, 0x03, 0x01, $x, 0x00, $y, $stream)
+    smpte_identifier!(0x01, 0x02, 0x01, 0x01, 0x0d, 0x01, 0x03, 0x01, $x, 0x01, $y, $stream)
+  );
+  (SmpteRegitery::Essence, $x:tt, $y:tt) => (
+    smpte_identifier!(0x01, 0x02, 0x01, 0x01, 0x0d, 0x01, 0x03, 0x01, $x, 0x01, $y, _)
   );
   (SmpteRegitery::Fill, $x:tt) => (
     smpte_identifier!(0x01, 0x01, 0x01, $x, 0x03, 0x01, 0x02, 0x10, 0x01, 0x00, 0x00, 0x00)

@@ -1,7 +1,9 @@
 
 use serializer::encoder::*;
 
-use klv::key::*;
+use klv::key::key::*;
+use klv::key::dict::*;
+use klv::key::reader::*;
 use klv::value::*;
 use klv::length::*;
 use klv::partition::*;
