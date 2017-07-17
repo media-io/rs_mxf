@@ -16,11 +16,6 @@ fn display_error() {
 }
 
 fn main() {
-
-  // if env::args().count() != 2 {
-  //   display_error()
-  // }
-
   let mut filter_sound_wave = true;
   let mut filter_video_frame = true;
 
@@ -42,6 +37,28 @@ fn main() {
           ("-a", tmp_path) |
           (tmp_path, "-a") => {
             filter_sound_wave = false;
+            tmp_path.to_string()
+          },
+          (_, _) => {
+            display_error();
+            panic!("unable to parse parameters");
+          },
+        }
+      },
+      4 => {
+        let arg1 = env::args().nth(1).unwrap();
+        let arg2 = env::args().nth(2).unwrap();
+        let arg3 = env::args().nth(3).unwrap();
+
+        match (arg1.as_str(), arg2.as_str(), arg3.as_str()) {
+          ("-v", "-a", tmp_path) |
+          ("-a", "-v", tmp_path) |
+          ("-a", tmp_path, "-v") |
+          ("-v", tmp_path, "-a") |
+          (tmp_path, "-v", "-a") => {
+          (tmp_path, "-a", "-v") => {
+            filter_video_frame = false;
+            filter_sound_frame = false;
             tmp_path.to_string()
           },
           (_, _) => {
