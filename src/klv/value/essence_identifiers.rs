@@ -1,5 +1,8 @@
 
+use klv::ul::format_ul;
+
 #[derive(Debug, Clone, PartialEq)]
+#[allow(non_camel_case_types)]
 pub enum EssenceIdentifier {
   BwfFrameWrapped,
   BwfClipWrapped,
@@ -13,6 +16,9 @@ pub enum EssenceIdentifier {
   MpegEsWithStreamIdClosedGopWrapped,
   MpegEsWithStreamIdSlaveWrapped,
   MpegEsWithStreamIdNoSpecificWrappingConstraints,
+  Jpeg2000_FrameWrapped,
+  Jpeg2000_ClipedWrapped,
+  MXFGCP1FrameWrappedPictureElement,
   GenericEssenceContainerMultipleWrappings,
   Unknown
 }
@@ -23,6 +29,12 @@ macro_rules! build_identifier {
   );
   (version_number => $vn:expr, mpeg_es => $me:expr) => (
     smpte_identifier!(0x04, 0x01, 0x01, $vn, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x04, _, $me)
+  );
+  (version_number => $vn:expr, jpeg2000 => $k:expr) => (
+    smpte_identifier!(0x04, 0x01, 0x01, $vn, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x0c, $k, 0x00)
+  );
+  (version_number => $vn:expr, gc => $k:expr) => (
+    smpte_identifier!(0x04, 0x01, 0x01, $vn, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x0c, 0x06, 0x00)
   );
 }
 
@@ -65,11 +77,21 @@ pub fn parse_essence_ul(ul: Vec<u8>) -> EssenceIdentifier {
     build_identifier!(version_number => 0x02, mpeg_es => 0x7F) => {
       EssenceIdentifier::MpegEsWithStreamIdNoSpecificWrappingConstraints
     },
+    build_identifier!(version_number => 0x07, jpeg2000 => 0x01) => {
+      EssenceIdentifier::Jpeg2000_FrameWrapped
+    },
+    build_identifier!(version_number => 0x07, jpeg2000 => 0x06) => {
+      EssenceIdentifier::Jpeg2000_FrameWrapped
+    },
+    build_identifier!(version_number => 0x0d, gc => 0x06) => {
+      EssenceIdentifier::MXFGCP1FrameWrappedPictureElement
+    },
 
     (0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x03, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x7F, 0x01,  0x00) => {
       EssenceIdentifier::GenericEssenceContainerMultipleWrappings
     },
     _ => {
+      println!("Unknown essence identifier: {}", format_ul(&ul));
       EssenceIdentifier::Unknown
     }
   }

@@ -35,7 +35,7 @@ impl Encoder for Length {
       result.write_u32::<BigEndian>(self.value as u32).unwrap();
       return result
     }
-    panic!("wrong length")
+    panic!("wrong length !!!")
   }
 }
 
@@ -63,6 +63,22 @@ pub fn parse<R: Read>(stream: &mut R) -> Result<Option<Length>, String> {
           BigEndian::read_u32(&data) as usize
         },
         4 => BigEndian::read_u32(&data) as usize,
+        5 => {
+          data.insert(0, 0);
+          data.insert(0, 0);
+          data.insert(0, 0);
+          BigEndian::read_u64(&data) as usize
+        },
+        6 => {
+          data.insert(0, 0);
+          data.insert(0, 0);
+          BigEndian::read_u64(&data) as usize
+        },
+        7 => {
+          data.insert(0, 0);
+          BigEndian::read_u64(&data) as usize
+        },
+        8 => BigEndian::read_u64(&data) as usize,
         _ => return Err("wrong length".to_string())
       };
     

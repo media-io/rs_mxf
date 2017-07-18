@@ -1,7 +1,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
-use klv::value::*;
-use klv::essence_identifiers::*;
+use klv::value::value::*;
+use klv::value::essence_identifiers::*;
 
 use std::io::Read;
 
@@ -70,45 +70,58 @@ pub fn parse_partition<R: Read>(stream: &mut R) -> Result<Vec<Element>, String> 
 
   Ok(vec![
     Element{
-      identifier: ElementIdentifier::PartitionMajor{value: partition_major}
+      identifier: ElementIdentifier::PartitionMajor{value: partition_major},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionMinor{value: partition_minor}
+      identifier: ElementIdentifier::PartitionMinor{value: partition_minor},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionKagSize{size: kag_size}
+      identifier: ElementIdentifier::PartitionKagSize{size: kag_size},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionThisPartition{offset: this_partition}
+      identifier: ElementIdentifier::PartitionThisPartition{offset: this_partition},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionPreviousPartition{offset: previous_partition}
+      identifier: ElementIdentifier::PartitionPreviousPartition{offset: previous_partition},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionFooterPartition{offset: footer_partition}
+      identifier: ElementIdentifier::PartitionFooterPartition{offset: footer_partition},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionHeaderByteCount{size: header_byte_count}
+      identifier: ElementIdentifier::PartitionHeaderByteCount{size: header_byte_count},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionIndexByteCount{size: index_byte_count}
+      identifier: ElementIdentifier::PartitionIndexByteCount{size: index_byte_count},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionIndexSid{value: index_sid}
+      identifier: ElementIdentifier::PartitionIndexSid{value: index_sid},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionByteOffset{offset: byte_offset}
+      identifier: ElementIdentifier::PartitionByteOffset{offset: byte_offset},
+      value: None
     },
     Element{
-      identifier: ElementIdentifier::PartitionBodySid{value: body_sid}
+      identifier: ElementIdentifier::PartitionBodySid{value: body_sid},
+      value: None
     },
     Element{
-      identifier: parse_operational_pattern(op_ul).unwrap()
+      identifier: parse_operational_pattern(op_ul).unwrap(),
+      value: None
     },
     Element{
       identifier: ElementIdentifier::PartitionEssenceContainers {
         essences: essences_kind
-      }
+      },
+      value: None
     }
   ])
 }

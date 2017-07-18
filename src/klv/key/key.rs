@@ -60,3 +60,14 @@ impl Encoder for Key {
     }
   }
 }
+
+pub fn format_key(key : &Vec<u8>) -> String {
+  let (first, next) = key.split_at(1);
+  let mut string_key: String = format!("0x{:02x}", first[0]);
+
+  for v in next {
+    string_key = format!("{}, 0x{:02x}", string_key, v);
+  }
+
+  string_key
+}
