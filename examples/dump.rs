@@ -98,7 +98,7 @@ fn main() {
                 // println!("{:?}", klv);
                 if klv.value.elements.len() == 1 {
                   match klv.value.elements[0].identifier {
-                    ContentData{address, size} => {
+                    ContentData{..} => {
                       println!("{:?}", klv);
                     },
                     _ => {}

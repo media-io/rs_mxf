@@ -12,8 +12,9 @@ mod test {
   use klv::key::partition::*;
   use klv::key::dict::*;
   use klv::key::key::Key;
-  use klv::value::*;
-  use klv::essence_identifiers::*;
+  use klv::value::value::*;
+  use klv::value::essence_identifiers::*;
+  use klv::value::value::Element;
 
   #[test]
   fn read_empty_file() {
@@ -23,8 +24,8 @@ mod test {
 
     let result = next_klv(&mut stream);
 
-    assert!(result.is_err());
-    assert!(result.err() == Some("failed to fill whole buffer".to_string()));
+    assert!(result.is_ok());
+    assert!(result.unwrap() == None);
   }
 
   #[test]
@@ -60,59 +61,48 @@ mod test {
       value: Value {
         elements: vec![
           Element {
-            identifier: ElementIdentifier::PartitionMajor {
-              value: 1
-            }
+            identifier: ElementIdentifier::PartitionMajor {value: 1},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionMinor {
-              value: 2
-            }
+            identifier: ElementIdentifier::PartitionMinor {value: 2},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionKagSize {
-              size: 256
-            }
+            identifier: ElementIdentifier::PartitionKagSize {size: 256},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionThisPartition {
-              offset: 0
-            }
+            identifier: ElementIdentifier::PartitionThisPartition {offset: 0},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionPreviousPartition {
-              offset: 0
-            }
+            identifier: ElementIdentifier::PartitionPreviousPartition {offset: 0},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionFooterPartition {
-              offset: 0
-            }
+            identifier: ElementIdentifier::PartitionFooterPartition {offset: 0},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionHeaderByteCount {
-              size: 0
-            }
+            identifier: ElementIdentifier::PartitionHeaderByteCount {size: 0},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionIndexByteCount {
-              size: 0
-            }
+            identifier: ElementIdentifier::PartitionIndexByteCount {size: 0},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionIndexSid {
-              value: 0
-            }
+            identifier: ElementIdentifier::PartitionIndexSid {value: 0},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionByteOffset {
-            offset: 0
-            }
+            identifier: ElementIdentifier::PartitionByteOffset {offset: 0},
+            value: None
           },
           Element {
-            identifier: ElementIdentifier::PartitionBodySid {
-            value: 0
-            }
+            identifier: ElementIdentifier::PartitionBodySid {value: 0},
+            value: None
           },
           Element {
             identifier: ElementIdentifier::PartitionOperationalPattern {
@@ -121,12 +111,14 @@ mod test {
               internal_essence: true,
               stream_file: true,
               uni_track: false
-            }
+            },
+            value: None
           },
           Element {
             identifier: ElementIdentifier::PartitionEssenceContainers {
               essences: vec![EssenceIdentifier::MpegEsWithStreamIdFrameWrapped]
-            }
+            },
+            value: None
           }
         ]
       }
@@ -147,37 +139,48 @@ mod test {
     let header_value = Value {
       elements: vec![
         Element{
-          identifier: ElementIdentifier::PartitionMajor{value: 1}
+          identifier: ElementIdentifier::PartitionMajor{value: 1},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionMinor{value: 2}
+          identifier: ElementIdentifier::PartitionMinor{value: 2},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionKagSize{size: 512}
+          identifier: ElementIdentifier::PartitionKagSize{size: 512},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionThisPartition{offset: 0}
+          identifier: ElementIdentifier::PartitionThisPartition{offset: 0},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionPreviousPartition{offset: 0}
+          identifier: ElementIdentifier::PartitionPreviousPartition{offset: 0},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionFooterPartition{offset: 0}
+          identifier: ElementIdentifier::PartitionFooterPartition{offset: 0},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionHeaderByteCount{size: 0}
+          identifier: ElementIdentifier::PartitionHeaderByteCount{size: 0},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionIndexByteCount{size: 0}
+          identifier: ElementIdentifier::PartitionIndexByteCount{size: 0},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionIndexSid{value: 0}
+          identifier: ElementIdentifier::PartitionIndexSid{value: 0},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionByteOffset{offset: 0}
+          identifier: ElementIdentifier::PartitionByteOffset{offset: 0},
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionBodySid{value: 0}
+          identifier: ElementIdentifier::PartitionBodySid{value: 0},
+          value: None
         },
         Element{
           identifier: ElementIdentifier::PartitionOperationalPattern {
@@ -186,10 +189,12 @@ mod test {
             internal_essence: true,
             stream_file: true,
             uni_track: false
-          }
+          },
+          value: None
         },
         Element{
-          identifier: ElementIdentifier::PartitionEssenceContainers { essences: vec![] }
+          identifier: ElementIdentifier::PartitionEssenceContainers { essences: vec![] },
+          value: None
         },
       ]
     };
@@ -201,27 +206,29 @@ mod test {
 
     stream.write(Encoder::serialise(&header_klv).as_ref()).unwrap();
 
-    let static_track_key = Key {
-      identifier: KeyIdentifier::StaticTrackSet
-    };
+    // let static_track_key = Key {
+    //   identifier: KeyIdentifier::StaticTrackSet
+    // };
 
-    let static_track_value = Value {
-      elements: vec![
-        Element{
-          identifier: ElementIdentifier::InstanceUid{uuid: vec![0x66, 0x66, 0x66, 0x66]}
-        },
-        Element{
-          identifier: ElementIdentifier::GenerationUid{uuid: vec![0x66, 0x66, 0x66, 0x66]}
-        },
-      ]
-    };
+    // let static_track_value = Value {
+    //   elements: vec![
+    //     Element{
+    //       identifier: ElementIdentifier::InstanceUid,
+    //       value: None
+    //     },
+    //     Element{
+    //       identifier: ElementIdentifier::GenerationIdentifier,
+    //       value: None
+    //     },
+    //   ]
+    // };
 
-    let static_track_klv = Klv {
-      key: static_track_key,
-      value: static_track_value
-    };
+    // let static_track_klv = Klv {
+    //   key: static_track_key,
+    //   value: static_track_value
+    // };
 
-    stream.write(Encoder::serialise(&static_track_klv).as_ref()).unwrap();
+    // stream.write(Encoder::serialise(&static_track_klv).as_ref()).unwrap();
 
     let frame_key = Key {
       identifier: KeyIdentifier::PictureItemMpegFrameWrappedPictureElement
@@ -230,7 +237,8 @@ mod test {
     let frame_value = Value {
       elements: vec![
         Element{
-          identifier: ElementIdentifier::Data{data: vec![0x00; 2000]}
+          identifier: ElementIdentifier::Data{data: vec![0x00; 2000]},
+          value: None
         }
       ]
     };
@@ -241,6 +249,6 @@ mod test {
     };
 
     stream.write(Encoder::serialise(&frame_klv).as_ref()).unwrap();
-    assert_eq!(stream.get_ref().len(), 2157);
+    assert_eq!(stream.get_ref().len(), 2124);
   }
 }
