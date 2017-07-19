@@ -219,6 +219,37 @@ pub enum LayoutCode {
     Reserved,
 }
 
+pub fn get_layout(value: u8) -> LayoutCode {
+  match value {
+    0x52 => LayoutCode::RedComponent,
+    0x47 => LayoutCode::GreenComponent,
+    0x42 => LayoutCode::BlueComponent,
+    0x41 => LayoutCode::AlphaComponent,
+    0x72 => LayoutCode::RedComponent,
+    0x67 => LayoutCode::GreenComponent,
+    0x62 => LayoutCode::BlueComponent,
+    0x61 => LayoutCode::AlphaComponent,
+    0x46 => LayoutCode::FillComponent,
+    0x50 => LayoutCode::PaletteCode,
+    0x55 => LayoutCode::UChromaSample,
+    0x56 => LayoutCode::VChromaSample,
+    0x57 => LayoutCode::WCompositeVideo,
+    0x58 => LayoutCode::XNonCositedLuminanceComponent,
+    0x59 => LayoutCode::YLuminanceComponent,
+    0x5A => LayoutCode::ZDepthComponent,
+    0x75 => LayoutCode::UChromaSample,
+    0x76 => LayoutCode::VChromaSample,
+    0x77 => LayoutCode::WCompositeVideo,
+    0x78 => LayoutCode::XNonCositedLuminanceComponent,
+    0x79 => LayoutCode::YLuminanceComponent,
+    0x7A => LayoutCode::ZDepthComponent,
+    0xD8 => LayoutCode::CompColorX,
+    0xD9 => LayoutCode::CompColorY,
+    0xDA => LayoutCode::CompColorZ,
+    _ => LayoutCode::Reserved,
+  }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Layout {
     pub code: LayoutCode,

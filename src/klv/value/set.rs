@@ -85,7 +85,7 @@ pub fn parse_set<R: Read>(stream: &mut R, size: usize) -> Result<Vec<Element>, S
             },
             (ValueDataType::Uint8Array, _) => {
               let count = stream.read_u32::<BigEndian>().unwrap();
-              let size = stream.read_u32::<BigEndian>().unwrap();
+              let _size = stream.read_u32::<BigEndian>().unwrap();
               let mut values = vec![];
               
               for _index in 0..count {
@@ -237,6 +237,22 @@ pub fn parse_set<R: Read>(stream: &mut R, size: usize) -> Result<Vec<Element>, S
                 data: string
               })
             }
+            (ValueDataType::RgbaLayout, 16) => {
+              let mut layouts = vec![];
+              for _i in 0..8 {
+                let code = stream.read_u8().unwrap();
+                let bit_depth = stream.read_u8().unwrap();
+                if code != 0 {
+                  layouts.push(Layout{
+                    code: get_layout(code),
+                    bit_depth: bit_depth
+                  })
+                }
+              }
+              Some(ValueData::RgbaLayout{
+                data: layouts
+              })
+            },
             (_, _) => {
               println!("unsupported {:?} for length {} with identifier {:?}", value_type, tag_length, identifier);
               let mut tag_data = vec![0; tag_length as usize];
@@ -255,6 +271,7 @@ pub fn parse_set<R: Read>(stream: &mut R, size: usize) -> Result<Vec<Element>, S
         elements.push(element);
       },
       None => {
+        // println!("Unknown tag identifier 0x{:04x}", tag_id);
         let mut tag_data = vec![0; tag_length as usize];
         try!(stream.read_exact(&mut tag_data).map_err(|e| e.to_string()));
       },

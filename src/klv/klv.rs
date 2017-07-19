@@ -79,6 +79,7 @@ pub fn next_klv<R: Read + Seek>(mut stream: &mut R) -> Result<Option<Klv>, Strin
       KeyIdentifier::Aes3AudioDescriptorSet |
       KeyIdentifier::Jpeg2000SubDescriptorSet |
       KeyIdentifier::IdentificationSet |
+      KeyIdentifier::RgbaVideoDescriptor |
       KeyIdentifier::CdciVideoDescriptor => {
         parse_set(&mut stream, length.value).unwrap()
       },
