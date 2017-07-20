@@ -11,3 +11,7 @@ documentation = "https://docs.rs/mxf"
 
 [dependencies]
 byteorder = "1.0.0"
+
+[lib]
+name = "mxf"
+crate-type = ["dylib"]
