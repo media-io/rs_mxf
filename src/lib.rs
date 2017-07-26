@@ -9,6 +9,7 @@ mod test {
   // use serializer::decoder::*;
   use serializer::encoder::*;
   use klv::klv::*;
+  use klv::klv_reader::*;
   use klv::key::partition::*;
   use klv::key::dict::*;
   use klv::key::key::Key;
@@ -20,9 +21,13 @@ mod test {
   fn read_empty_file() {
     use std::io::Cursor;
 
-    let mut stream = Cursor::new(vec![0; 0]);
+    let stream = Cursor::new(vec![0; 0]);
+    let mut reader = KlvReader{
+      stream: stream,
+      elements: vec![]
+    };
 
-    let result = next_klv(&mut stream);
+    let result = next_klv(&mut reader);
 
     assert!(result.is_ok());
     assert!(result.unwrap() == None);
@@ -50,9 +55,13 @@ mod test {
       0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x02, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x04, 0x97, 0x01, // Mpeg ES
     ];
 
-    let mut stream = Cursor::new(data);
+    let stream = Cursor::new(data);
+    let mut reader = KlvReader{
+      stream: stream,
+      elements: vec![]
+    };
 
-    let valid_klv = next_klv(&mut stream).unwrap().unwrap();
+    let valid_klv = next_klv(&mut reader).unwrap().unwrap();
     
     assert_eq!(valid_klv, Klv {
       key: Key {
