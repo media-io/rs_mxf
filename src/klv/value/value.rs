@@ -177,6 +177,7 @@ pub enum ElementIdentifier {
   IndexStartPosition,
   IndexDuration,
   PositionTableCount,
+  RandomIndexMetadata,
 
   UrlString,
   LocatorName,
@@ -357,6 +358,12 @@ pub struct IndexEntry {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct RandomIndexEntry {
+  pub body_sid: u32,
+  pub byte_offset: u64,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum ValueData {
   Boolean {
     data: bool
@@ -457,6 +464,9 @@ pub enum ValueData {
   },
   IndexEntries {
     entries: Vec<IndexEntry>
+  },
+  RandomIndexEntries {
+    entries: Vec<RandomIndexEntry>
   },
   Unknown {
     identifier: Vec<u8>

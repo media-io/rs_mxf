@@ -8,6 +8,7 @@ use klv::key::reader::*;
 use klv::length::*;
 use klv::value::partition::*;
 use klv::value::primer_pack::*;
+use klv::value::random_index_metadata::*;
 use klv::value::set::*;
 use klv::value::value::*;
 
@@ -63,6 +64,9 @@ pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<
       },
       KeyIdentifier::PrimerPack => {
         parse_primer_pack(&mut reader).unwrap()
+      },
+      KeyIdentifier::RandomIndexMetadata => {
+        parse_random_index_metadata(&mut reader, length.value).unwrap()
       },
       KeyIdentifier::IndexTableSegment |
       KeyIdentifier::PrefaceSet |
