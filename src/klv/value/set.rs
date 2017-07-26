@@ -23,6 +23,9 @@ pub fn parse_set<R: Read + Seek>(reader: &mut KlvReader<R>, size: usize) -> Resu
   let mut readed_size = 0;
   let mut elements = vec![];
 
+  let mut slice_count = None;
+  let mut posistion_table_count = None;
+
   while readed_size < size {
     let tag_id = reader.stream.read_u16::<BigEndian>().unwrap();
     let tag_length = reader.stream.read_u16::<BigEndian>().unwrap();
@@ -54,6 +57,14 @@ pub fn parse_set<R: Read + Seek>(reader: &mut KlvReader<R>, size: usize) -> Resu
             },
             (ValueDataType::Uint8, 1) => {
               let value = reader.stream.read_u8().unwrap();
+
+              if identifier == ElementIdentifier::SliceCount {
+                slice_count = Some(value);
+              }
+              if identifier == ElementIdentifier::PositionTableCount {
+                posistion_table_count = Some(value);
+              }
+
               Some(ValueData::Uint8{
                 data: value
               })
@@ -276,6 +287,77 @@ pub fn parse_set<R: Read + Seek>(reader: &mut KlvReader<R>, size: usize) -> Resu
                 components: components
               })
             },
+            (ValueDataType::DeltaEntries, _) => {
+              let count = reader.stream.read_u32::<BigEndian>().unwrap();
+              let size = reader.stream.read_u32::<BigEndian>().unwrap();
+              
+              assert!(size == 6);
+              let mut entries = vec![];
+
+              for _i in 0..count {
+                let position_table_index = reader.stream.read_i8().unwrap();
+                let slice = reader.stream.read_u8().unwrap();
+                let element_delta = reader.stream.read_u32::<BigEndian>().unwrap();
+
+                entries.push(DeltaEntry{
+                  position_table_index: position_table_index,
+                  slice: slice,
+                  element_delta: element_delta,
+                })
+              }
+
+              Some(ValueData::DeltaEntries{
+                entries: entries
+              })
+            }
+            (ValueDataType::IndexEntries, _) => {
+              let count = reader.stream.read_u32::<BigEndian>().unwrap();
+              let _size = reader.stream.read_u32::<BigEndian>().unwrap();
+
+              let mut entries = vec![];
+
+              for _i in 0..count {
+                let temporal_offset = reader.stream.read_i8().unwrap();
+                let key_frame_offset = reader.stream.read_i8().unwrap();
+                let flags = reader.stream.read_u8().unwrap();
+                let stream_offset = reader.stream.read_u64::<BigEndian>().unwrap();
+
+                let mut slice_offset = vec![];
+                let mut position_table = vec![];
+                match slice_count {
+                  Some(count) => {
+                    for _i in 0..count {
+                      let offset = reader.stream.read_u32::<BigEndian>().unwrap();
+                      slice_offset.push(offset);
+                    }
+                  },
+                  None => {},
+                }
+                match posistion_table_count {
+                  Some(count) => {
+                    for _i in 0..count {
+                      let num = reader.stream.read_u32::<BigEndian>().unwrap();
+                      let den = reader.stream.read_u32::<BigEndian>().unwrap();
+                      position_table.push(Rational{
+                        num: num,
+                        den: den
+                      });
+                    }
+                  },
+                  None => {},
+                }
+
+                entries.push(IndexEntry {
+                  temporal_offset: temporal_offset,
+                  key_frame_offset: key_frame_offset,
+                  flags: flags,
+                  stream_offset: stream_offset,
+                  slice_offset: slice_offset,
+                  position_table: position_table,
+                })
+              }
+              None
+            }
             (_, _) => {
               println!("unsupported {:?} for length {} with identifier {:?}", value_type, tag_length, identifier);
               let mut tag_data = vec![0; tag_length as usize];

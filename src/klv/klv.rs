@@ -64,6 +64,7 @@ pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<
       KeyIdentifier::PrimerPack => {
         parse_primer_pack(&mut reader).unwrap()
       },
+      KeyIdentifier::IndexTableSegment |
       KeyIdentifier::PrefaceSet |
       KeyIdentifier::ContentStorageSet |
       KeyIdentifier::EssenceContainerDataSet |

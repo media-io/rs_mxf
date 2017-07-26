@@ -176,7 +176,7 @@ pub enum ElementIdentifier {
   IndexEditRate,
   IndexStartPosition,
   IndexDuration,
-  PosTableCount,
+  PositionTableCount,
 
   UrlString,
   LocatorName,
@@ -200,7 +200,19 @@ pub enum ElementIdentifier {
   DmFramework,
   TrackIds,
 
+  IsRipPresent,
   SubDescriptors,
+
+  Mpeg2VideoDescriptorSingleSequence,
+  Mpeg2VideoDescriptorCodedContentType,
+  Mpeg2VideoDescriptorBPictureCount,
+  Mpeg2VideoDescriptorProfileAndLevel,
+  Mpeg2VideoDescriptorLowDelay,
+  Mpeg2VideoDescriptorMaxGOP,
+  Mpeg2VideoDescriptorConstantBframes,
+  Mpeg2VideoDescriptorClosedGOP,
+  Mpeg2VideoDescriptorIdenticalGOP,
+  Mpeg2VideoDescriptorBitRate,
 
   Jpeg2000VideoDescriptor_Rsiz,
   Jpeg2000VideoDescriptor_Xsiz,
@@ -322,6 +334,29 @@ pub struct J2KComponent {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct DeltaEntry {
+  pub position_table_index: i8,
+  pub slice: u8,
+  pub element_delta: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Rational {
+  pub num: u32,
+  pub den: u32
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndexEntry {
+  pub temporal_offset: i8,
+  pub key_frame_offset: i8,
+  pub flags: u8,
+  pub stream_offset: u64,
+  pub slice_offset: Vec<u32>,
+  pub position_table: Vec<Rational>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum ValueData {
   Boolean {
     data: bool
@@ -417,6 +452,12 @@ pub enum ValueData {
   J2KComponentSizing {
     components: Vec<J2KComponent>
   },
+  DeltaEntries {
+    entries: Vec<DeltaEntry>
+  },
+  IndexEntries {
+    entries: Vec<IndexEntry>
+  },
   Unknown {
     identifier: Vec<u8>
   }
@@ -459,6 +500,8 @@ pub enum ValueDataType {
   J2KComponentSizing,
   J2KCodingStyleDefault,
   J2KQuantisationDefault,
+  DeltaEntries,
+  IndexEntries,
   Unknown,
 }
 
@@ -735,12 +778,12 @@ pub fn get_tag_identifier(id: u16, dynamic_tags: &mut Vec<DynamicTagList>) -> Op
       0x3F06 => (ElementIdentifier::IndexSid, ValueDataType::Uint32),
       0x3F07 => (ElementIdentifier::BodySid, ValueDataType::Uint32),
       0x3F08 => (ElementIdentifier::SliceCount, ValueDataType::Uint8),
-      0x3F09 => (ElementIdentifier::DeltaEntryArray, ValueDataType::Unknown),
-      0x3F0A => (ElementIdentifier::IndexEntryArray, ValueDataType::Unknown),
+      0x3F09 => (ElementIdentifier::DeltaEntryArray, ValueDataType::DeltaEntries),
+      0x3F0A => (ElementIdentifier::IndexEntryArray, ValueDataType::IndexEntries),
       0x3F0B => (ElementIdentifier::IndexEditRate, ValueDataType::Rational),
       0x3F0C => (ElementIdentifier::IndexStartPosition, ValueDataType::Position),
       0x3F0D => (ElementIdentifier::IndexDuration, ValueDataType::Length),
-      0x3F0E => (ElementIdentifier::PosTableCount, ValueDataType::Uint8),
+      0x3F0E => (ElementIdentifier::PositionTableCount, ValueDataType::Uint8),
 
       0x4001 => (ElementIdentifier::UrlString, ValueDataType::Utf16),
       0x4101 => (ElementIdentifier::LocatorName, ValueDataType::Utf16),
@@ -768,7 +811,20 @@ pub fn get_tag_identifier(id: u16, dynamic_tags: &mut Vec<DynamicTagList>) -> Op
           // println!("{:?}", dynamic_tag);
           if dynamic_tag.tag == id {
             match dynamic_tag.identifier {
+              Ul::IsRipPresent => return Some((ElementIdentifier::IsRipPresent, ValueDataType::Boolean)),
               Ul::SubDescriptors => return Some((ElementIdentifier::SubDescriptors, ValueDataType::StrongRefArray)),
+
+              Ul::Mpeg2VideoDescriptorSingleSequence => return Some((ElementIdentifier::Mpeg2VideoDescriptorSingleSequence, ValueDataType::Boolean)),
+              Ul::Mpeg2VideoDescriptorCodedContentType => return Some((ElementIdentifier::Mpeg2VideoDescriptorCodedContentType, ValueDataType::Uint8)),
+              Ul::Mpeg2VideoDescriptorBPictureCount => return Some((ElementIdentifier::Mpeg2VideoDescriptorBPictureCount, ValueDataType::Uint16)),
+              Ul::Mpeg2VideoDescriptorProfileAndLevel => return Some((ElementIdentifier::Mpeg2VideoDescriptorProfileAndLevel, ValueDataType::Uint8)),
+              Ul::Mpeg2VideoDescriptorLowDelay => return Some((ElementIdentifier::Mpeg2VideoDescriptorLowDelay, ValueDataType::Boolean)),
+              Ul::Mpeg2VideoDescriptorMaxGOP => return Some((ElementIdentifier::Mpeg2VideoDescriptorMaxGOP, ValueDataType::Uint16)),
+              Ul::Mpeg2VideoDescriptorConstantBframes => return Some((ElementIdentifier::Mpeg2VideoDescriptorConstantBframes, ValueDataType::Boolean)),
+              Ul::Mpeg2VideoDescriptorClosedGOP => return Some((ElementIdentifier::Mpeg2VideoDescriptorClosedGOP, ValueDataType::Boolean)),
+              Ul::Mpeg2VideoDescriptorIdenticalGOP => return Some((ElementIdentifier::Mpeg2VideoDescriptorIdenticalGOP, ValueDataType::Boolean)),
+              Ul::Mpeg2VideoDescriptorBitRate => return Some((ElementIdentifier::Mpeg2VideoDescriptorBitRate, ValueDataType::Uint32)),
+
               Ul::Jpeg2000VideoDescriptor_Rsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Rsiz, ValueDataType::Uint16)),
               Ul::Jpeg2000VideoDescriptor_Xsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Xsiz, ValueDataType::Uint32)),
               Ul::Jpeg2000VideoDescriptor_Ysiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Ysiz, ValueDataType::Uint32)),
@@ -780,7 +836,11 @@ pub fn get_tag_identifier(id: u16, dynamic_tags: &mut Vec<DynamicTagList>) -> Op
               Ul::Jpeg2000VideoDescriptor_YTOsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_YTOsiz, ValueDataType::Uint32)),
               Ul::Jpeg2000VideoDescriptor_Csiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Csiz, ValueDataType::Uint16)),
               Ul::Jpeg2000VideoDescriptor_PictureComponentSizing => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_PictureComponentSizing, ValueDataType::J2KComponentSizing)),
-              _ => {}
+              _ => {
+
+                println!("dynamic tag not supported: {:?}", dynamic_tag.identifier);
+                return None
+              }
             }
           }
         }
