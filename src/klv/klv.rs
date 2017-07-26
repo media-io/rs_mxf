@@ -1,6 +1,7 @@
 
 use serializer::encoder::*;
 
+use klv::klv_reader::*;
 use klv::key::key::*;
 use klv::key::dict::*;
 use klv::key::reader::*;
@@ -33,20 +34,20 @@ impl Encoder for Klv {
   }
 }
 
-pub fn next_klv<R: Read + Seek>(mut stream: &mut R) -> Result<Option<Klv>, String>
+pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<Klv>, String>
 {
   let mut identifier_data = vec![0; 16];
-  match stream.read_exact(&mut identifier_data) {
+  match reader.stream.read_exact(&mut identifier_data) {
     Ok(_some) => {},
     Err(_msg) => {
       // println!("{:?}", msg);
       return Ok(None)
     },
   };
-  // try!(stream.read_exact(&mut identifier_data).map_err(|e| e.to_string()));
+  // try!(reader.stream.read_exact(&mut identifier_data).map_err(|e| e.to_string()));
   let key = parse_key(identifier_data);
-  let length = parse(&mut stream).unwrap().unwrap();
-  let address = stream.seek(SeekFrom::Current(0)).unwrap();
+  let length = parse(&mut reader.stream).unwrap().unwrap();
+  let address = reader.stream.seek(SeekFrom::Current(0)).unwrap();
 
   let identifier = ElementIdentifier::ContentData {
     address: address as usize,
@@ -58,10 +59,10 @@ pub fn next_klv<R: Read + Seek>(mut stream: &mut R) -> Result<Option<Klv>, Strin
       KeyIdentifier::HeaderPartition{status: _} |
       KeyIdentifier::BodyPartition{status: _} |
       KeyIdentifier::FooterPartition{status: _} => {
-        parse_partition(&mut stream).unwrap()
+        parse_partition(&mut reader.stream).unwrap()
       },
       KeyIdentifier::PrimerPack => {
-        parse_primer_pack(&mut stream).unwrap()
+        parse_primer_pack(&mut reader).unwrap()
       },
       KeyIdentifier::PrefaceSet |
       KeyIdentifier::ContentStorageSet |
@@ -81,14 +82,14 @@ pub fn next_klv<R: Read + Seek>(mut stream: &mut R) -> Result<Option<Klv>, Strin
       KeyIdentifier::IdentificationSet |
       KeyIdentifier::RgbaVideoDescriptor |
       KeyIdentifier::CdciVideoDescriptor => {
-        parse_set(&mut stream, length.value).unwrap()
+        parse_set(&mut reader, length.value).unwrap()
       },
       KeyIdentifier::FillItemAvid => {
-        let _new_address = stream.seek(SeekFrom::Current(length.value as i64)).unwrap();
+        let _new_address = reader.stream.seek(SeekFrom::Current(length.value as i64)).unwrap();
         vec![]
       },
       _ => {
-        let _new_address = stream.seek(SeekFrom::Current(length.value as i64)).unwrap();
+        let _new_address = reader.stream.seek(SeekFrom::Current(length.value as i64)).unwrap();
         vec![
           Element{
             identifier: identifier,

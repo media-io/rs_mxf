@@ -1,30 +1,33 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
+use klv::klv_reader::*;
 use klv::value::value::*;
 use klv::ul::match_ul;
 use klv::value::tag::DynamicTagList;
 
-use std::io::Read;
+use std::io::{Read, Seek};
 
-pub fn parse_primer_pack<R: Read>(stream: &mut R) -> Result<Vec<Element>, String> {
-  let number_of_items = stream.read_u32::<BigEndian>().unwrap();
-  let item_size = stream.read_u32::<BigEndian>().unwrap();
+pub fn parse_primer_pack<R: Read + Seek>(reader: &mut KlvReader<R>) -> Result<Vec<Element>, String> {
+  let number_of_items = reader.stream.read_u32::<BigEndian>().unwrap();
+  let item_size = reader.stream.read_u32::<BigEndian>().unwrap();
 
   let mut mapping = vec![];
 
   match item_size {
     18 => {
       for _index in 0..number_of_items {
-        let tag = stream.read_u16::<BigEndian>().unwrap();
+        let tag = reader.stream.read_u16::<BigEndian>().unwrap();
         let mut ul_data = vec![0; 16];
-        try!(stream.read_exact(&mut ul_data).map_err(|e| e.to_string()));
+        try!(reader.stream.read_exact(&mut ul_data).map_err(|e| e.to_string()));
 
         match match_ul(ul_data) {
           Some(ul) => {
-            mapping.push(DynamicTagList{
+            let dynamic_tag = DynamicTagList{
               tag: tag,
               identifier: ul
-            });
+            };
+            mapping.push(dynamic_tag.clone());
+            reader.elements.push(dynamic_tag);
           }
           None => {
           }

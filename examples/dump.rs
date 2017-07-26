@@ -7,6 +7,7 @@ use std::{env, process};
 
 use mxf::klv::key::dict::*;
 use mxf::klv::klv::*;
+use mxf::klv::klv_reader::*;
 
 use mxf::klv::value::value::ElementIdentifier::ContentData;
 
@@ -78,10 +79,15 @@ fn main() {
   // println!("filter_video_frame {:?}", filter_video_frame);
   // println!("filter_sound_wave {:?}", filter_sound_wave);
   let file = File::open(path).unwrap();
-  let mut stream = BufReader::new(file);
+  let stream = BufReader::new(file);
+
+  let mut reader = KlvReader{
+    stream: stream,
+    elements: vec![]
+  };
 
   loop {
-    match next_klv(&mut stream) {
+    match next_klv(&mut reader) {
       Ok(maybe_klv) => {
         match maybe_klv {
           Some(klv) => {

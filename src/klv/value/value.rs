@@ -2,6 +2,7 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use serializer::encoder::*;
 
+use klv::ul::*;
 use klv::value::tag::*;
 use klv::value::essence_identifiers::*;
 
@@ -10,6 +11,7 @@ fn get_smpte_identifier() -> Vec<u8> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[allow(non_camel_case_types)]
 pub enum ElementIdentifier {
   PartitionMajor{ value: u16 },
   PartitionMinor{ value: u16 },
@@ -197,6 +199,20 @@ pub enum ElementIdentifier {
   ChunkData,
   DmFramework,
   TrackIds,
+
+  SubDescriptors,
+
+  Jpeg2000VideoDescriptor_Rsiz,
+  Jpeg2000VideoDescriptor_Xsiz,
+  Jpeg2000VideoDescriptor_Ysiz,
+  Jpeg2000VideoDescriptor_XOsiz,
+  Jpeg2000VideoDescriptor_YOsiz,
+  Jpeg2000VideoDescriptor_XTsiz,
+  Jpeg2000VideoDescriptor_YTsiz,
+  Jpeg2000VideoDescriptor_XTOsiz,
+  Jpeg2000VideoDescriptor_YTOsiz,
+  Jpeg2000VideoDescriptor_Csiz,
+  Jpeg2000VideoDescriptor_PictureComponentSizing,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -252,50 +268,57 @@ pub fn get_layout(value: u8) -> LayoutCode {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Layout {
-    pub code: LayoutCode,
-    pub bit_depth: u8
+  pub code: LayoutCode,
+  pub bit_depth: u8
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Orientation {
-    LeftToRightTopToBottom,
-    RightToLeftTopToBottom,
-    LeftToRightBottomToTop,
-    RightToLeftBottomToTop,
-    TopToBottomLeftToRight,
-    TopToBottomRightToLeft,
-    BottomToTopLeftToRight,
-    BottomToTopRightToLeft,
-    Reserved
+  LeftToRightTopToBottom,
+  RightToLeftTopToBottom,
+  LeftToRightBottomToTop,
+  RightToLeftBottomToTop,
+  TopToBottomLeftToRight,
+  TopToBottomRightToLeft,
+  BottomToTopLeftToRight,
+  BottomToTopRightToLeft,
+  Reserved
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Mpeg2Profile {
-    Simple,
-    Main,
-    SnrScalable,
-    SpatiallyScalable,
-    High,
-    FourTwoTwo,
-    Reserved
+  Simple,
+  Main,
+  SnrScalable,
+  SpatiallyScalable,
+  High,
+  FourTwoTwo,
+  Reserved
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Mpeg2Level {
-    Low,
-    Main,
-    High1440,
-    High,
-    HighP,
-    Reserved,
+  Low,
+  Main,
+  High1440,
+  High,
+  HighP,
+  Reserved,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Mpeg2CodedContentType {
-    Unknown,
-    Progressive,
-    Interlaced,
-    Mixed,
+  Unknown,
+  Progressive,
+  Interlaced,
+  Mixed,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct J2KComponent {
+  pub s_siz: u8,
+  pub xr_siz: u8,
+  pub yr_siz: u8,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -391,6 +414,9 @@ pub enum ValueData {
   CodedContentType {
     mode: Mpeg2CodedContentType
   },
+  J2KComponentSizing {
+    components: Vec<J2KComponent>
+  },
   Unknown {
     identifier: Vec<u8>
   }
@@ -430,6 +456,9 @@ pub enum ValueDataType {
   StrongRefArray,
   StrongRefBatch,
   TrackIdBatch,
+  J2KComponentSizing,
+  J2KCodingStyleDefault,
+  J2KQuantisationDefault,
   Unknown,
 }
 
@@ -573,7 +602,7 @@ pub fn parse_operational_pattern(data: Vec<u8>) -> Option<ElementIdentifier> {
   }
 }
 
-pub fn get_tag_identifier(id: u16) -> Option<(ElementIdentifier, ValueDataType)> {
+pub fn get_tag_identifier(id: u16, dynamic_tags: &mut Vec<DynamicTagList>) -> Option<(ElementIdentifier, ValueDataType)> {
   let (identifier, data_type) =
     match id {
       0x0102 => (ElementIdentifier::GenerationIdentifier, ValueDataType::Uuid),
@@ -735,6 +764,26 @@ pub fn get_tag_identifier(id: u16) -> Option<(ElementIdentifier, ValueDataType)>
       0x6101 => (ElementIdentifier::DmFramework, ValueDataType::StrongRef),
       0x6102 => (ElementIdentifier::TrackIds, ValueDataType::TrackIdBatch),
       _      => {
+        for dynamic_tag in dynamic_tags {
+          // println!("{:?}", dynamic_tag);
+          if dynamic_tag.tag == id {
+            match dynamic_tag.identifier {
+              Ul::SubDescriptors => return Some((ElementIdentifier::SubDescriptors, ValueDataType::StrongRefArray)),
+              Ul::Jpeg2000VideoDescriptor_Rsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Rsiz, ValueDataType::Uint16)),
+              Ul::Jpeg2000VideoDescriptor_Xsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Xsiz, ValueDataType::Uint32)),
+              Ul::Jpeg2000VideoDescriptor_Ysiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Ysiz, ValueDataType::Uint32)),
+              Ul::Jpeg2000VideoDescriptor_XOsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_XOsiz, ValueDataType::Uint32)),
+              Ul::Jpeg2000VideoDescriptor_YOsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_YOsiz, ValueDataType::Uint32)),
+              Ul::Jpeg2000VideoDescriptor_XTsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_XTsiz, ValueDataType::Uint32)),
+              Ul::Jpeg2000VideoDescriptor_YTsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_YTsiz, ValueDataType::Uint32)),
+              Ul::Jpeg2000VideoDescriptor_XTOsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_XTOsiz, ValueDataType::Uint32)),
+              Ul::Jpeg2000VideoDescriptor_YTOsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_YTOsiz, ValueDataType::Uint32)),
+              Ul::Jpeg2000VideoDescriptor_Csiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Csiz, ValueDataType::Uint16)),
+              Ul::Jpeg2000VideoDescriptor_PictureComponentSizing => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_PictureComponentSizing, ValueDataType::J2KComponentSizing)),
+              _ => {}
+            }
+          }
+        }
         println!("unknown tag with id 0x{:x}", id);
         return None
       }
