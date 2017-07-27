@@ -26,18 +26,3 @@ impl Encoder for Tag {
     result
   }
 }
-
-
-// pub fn parse_tag<R: Read>(stream: &mut R) -> Result<Option<Tag>, String> {
-//   let mut data = vec![0; 2];
-//   try!(stream.read_exact(&mut data).map_err(|e| e.to_string()));
-
-//   match (data[0], data[1]) {
-//     (0x00, 0x00) => {
-//       println!("TAG");
-//     },
-//     _ => {
-//       println!("Unknown TAG");
-//     }
-//   }
-// }
