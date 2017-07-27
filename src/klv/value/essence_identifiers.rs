@@ -16,10 +16,19 @@ pub enum EssenceIdentifier {
   MpegEsWithStreamIdClosedGopWrapped,
   MpegEsWithStreamIdSlaveWrapped,
   MpegEsWithStreamIdNoSpecificWrappingConstraints,
+  AVCByteStream_FrameWrapped,
+  AVCByteStream_ClipedWrapped,
+  AVCByteStream_StripedWrapped,
+  AVCByteStream_PesWrapped,
+  AVCByteStream_FixedAudioSizeWrapped,
+  AVCByteStream_SpliceWrapped,
+  AVCByteStream_ClosedGopWrapped,
+  AVCByteStream_SlaveWrapped,
   Jpeg2000_FrameWrapped,
   Jpeg2000_ClipedWrapped,
   MXFGCP1FrameWrappedPictureElement,
   GenericEssenceContainerMultipleWrappings,
+  ANCData,
   Unknown
 }
 
@@ -29,6 +38,9 @@ macro_rules! build_identifier {
   );
   (version_number => $vn:expr, mpeg_es => $me:expr) => (
     smpte_identifier!(0x04, 0x01, 0x01, $vn, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x04, _, $me)
+  );
+  (version_number => $vn:expr, avc => $k:expr) => (
+    smpte_identifier!(0x04, 0x01, 0x01, $vn, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x10, 0x60, $k)
   );
   (version_number => $vn:expr, jpeg2000 => $k:expr) => (
     smpte_identifier!(0x04, 0x01, 0x01, $vn, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x0c, $k, 0x00)
@@ -77,6 +89,32 @@ pub fn parse_essence_ul(ul: Vec<u8>) -> EssenceIdentifier {
     build_identifier!(version_number => 0x02, mpeg_es => 0x7F) => {
       EssenceIdentifier::MpegEsWithStreamIdNoSpecificWrappingConstraints
     },
+
+    build_identifier!(version_number => 0x0a, avc => 0x01) => {
+      EssenceIdentifier::AVCByteStream_FrameWrapped
+    },
+    build_identifier!(version_number => 0x0a, avc => 0x02) => {
+      EssenceIdentifier::AVCByteStream_ClipedWrapped
+    },
+    build_identifier!(version_number => 0x0a, avc => 0x03) => {
+      EssenceIdentifier::AVCByteStream_StripedWrapped
+    },
+    build_identifier!(version_number => 0x0a, avc => 0x04) => {
+      EssenceIdentifier::AVCByteStream_PesWrapped
+    },
+    build_identifier!(version_number => 0x0a, avc => 0x05) => {
+      EssenceIdentifier::AVCByteStream_FixedAudioSizeWrapped
+    },
+    build_identifier!(version_number => 0x0a, avc => 0x06) => {
+      EssenceIdentifier::AVCByteStream_SpliceWrapped
+    },
+    build_identifier!(version_number => 0x0a, avc => 0x07) => {
+      EssenceIdentifier::AVCByteStream_ClosedGopWrapped
+    },
+    build_identifier!(version_number => 0x0a, avc => 0x08) => {
+      EssenceIdentifier::AVCByteStream_SlaveWrapped
+    },
+
     build_identifier!(version_number => 0x07, jpeg2000 => 0x01) => {
       EssenceIdentifier::Jpeg2000_FrameWrapped
     },
@@ -87,7 +125,10 @@ pub fn parse_essence_ul(ul: Vec<u8>) -> EssenceIdentifier {
       EssenceIdentifier::MXFGCP1FrameWrappedPictureElement
     },
 
-    (0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x03, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x7F, 0x01,  0x00) => {
+    (0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x03, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x7F, 0x01, 0x00) => {
+      EssenceIdentifier::GenericEssenceContainerMultipleWrappings
+    },
+    (0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x09, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x0e, 0x00, 0x00) => {
       EssenceIdentifier::GenericEssenceContainerMultipleWrappings
     },
     _ => {

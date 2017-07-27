@@ -68,6 +68,17 @@ pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<
       KeyIdentifier::RandomIndexMetadata => {
         parse_random_index_metadata(&mut reader, length.value).unwrap()
       },
+      KeyIdentifier::AS10CoreFramework => {
+        let mut data = vec![0; length.value];
+        let _new_address = reader.stream.read(&mut data).unwrap();
+        println!("AS10CoreFramework {:?}", data);
+        vec![
+          Element{
+            identifier: identifier,
+            value: None
+          }
+        ]
+      },
       KeyIdentifier::IndexTableSegment |
       KeyIdentifier::PrefaceSet |
       KeyIdentifier::ContentStorageSet |
@@ -82,8 +93,11 @@ pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<
       KeyIdentifier::DmSegmentDescriptorSet |
       KeyIdentifier::MultipleDescriptorSet |
       KeyIdentifier::MpegVideoDescriptorSet |
+      KeyIdentifier::WaveAudioDescriptorSet |
       KeyIdentifier::Aes3AudioDescriptorSet |
       KeyIdentifier::Jpeg2000SubDescriptorSet |
+      KeyIdentifier::SoundfieldGroupLabelSubDescriptorSet |
+      KeyIdentifier::AudioChannelLabelSubDescriptorSet |
       KeyIdentifier::IdentificationSet |
       KeyIdentifier::RgbaVideoDescriptor |
       KeyIdentifier::CdciVideoDescriptor => {

@@ -93,6 +93,7 @@ fn main() {
           Some(klv) => {
             match (filter_video_frame, filter_sound_wave, klv.key.identifier.clone()) {
               (_, _, KeyIdentifier::FillItem) |
+              (_, _, KeyIdentifier::FillItemAvid) |
               (_, _, KeyIdentifier::SystemItemSystemMetadataPack) |
               (_, _, KeyIdentifier::SystemItemPackageMetadataSet) |
               (_, true, KeyIdentifier::SoundItemWaveDataWrappedSoundElement) |
@@ -109,6 +110,8 @@ fn main() {
                     },
                     _ => {}
                   }
+                } else {
+                  // println!("{:?}", klv);
                 }
               },
             }

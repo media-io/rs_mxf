@@ -204,6 +204,23 @@ pub enum ElementIdentifier {
   IsRipPresent,
   SubDescriptors,
 
+  MCALabelDictionaryID,
+  MCATagSymbol,
+  MCATagName,
+  GroupOfSoundfieldGroupsLinkID,
+  MCALinkID,
+  SoundfieldGroupLinkID,
+  MCAChannelID,
+  MCATitle,
+  MCATitleVersion,
+  MCATitleSubVersion,
+  MCAEpisode,
+  MCAPartitionKind,
+  MCAPartitionNumber,
+  MCAAudioContentKind,
+  MCAAudioElementKind,
+  RFC5646SpokenLanguage,
+
   Mpeg2VideoDescriptorSingleSequence,
   Mpeg2VideoDescriptorCodedContentType,
   Mpeg2VideoDescriptorBPictureCount,
@@ -226,6 +243,9 @@ pub enum ElementIdentifier {
   Jpeg2000VideoDescriptor_YTOsiz,
   Jpeg2000VideoDescriptor_Csiz,
   Jpeg2000VideoDescriptor_PictureComponentSizing,
+  Jpeg2000VideoDescriptor_CodingStyleDefault,
+  Jpeg2000VideoDescriptor_QuantizationDefault,
+  Jpeg2000VideoDescriptor_J2CLayout,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -824,6 +844,23 @@ pub fn get_tag_identifier(id: u16, dynamic_tags: &mut Vec<DynamicTagList>) -> Op
               Ul::IsRipPresent => return Some((ElementIdentifier::IsRipPresent, ValueDataType::Boolean)),
               Ul::SubDescriptors => return Some((ElementIdentifier::SubDescriptors, ValueDataType::StrongRefArray)),
 
+              Ul::MCALabelDictionaryID => return Some((ElementIdentifier::MCALabelDictionaryID, ValueDataType::Ul)),
+              Ul::MCATagSymbol => return Some((ElementIdentifier::MCATagSymbol, ValueDataType::Utf16)),
+              Ul::MCATagName => return Some((ElementIdentifier::MCATagName, ValueDataType::Utf16)),
+              // Ul::GroupOfSoundfieldGroupsLinkID => return Some((ElementIdentifier::GroupOfSoundfieldGroupsLinkID, ValueDataType::UuidArray)),
+              Ul::MCALinkID => return Some((ElementIdentifier::MCALinkID, ValueDataType::Uuid)),
+              Ul::SoundfieldGroupLinkID => return Some((ElementIdentifier::SoundfieldGroupLinkID, ValueDataType::Uuid)),
+              Ul::MCAChannelID => return Some((ElementIdentifier::MCAChannelID, ValueDataType::Uint32)),
+              Ul::MCATitle => return Some((ElementIdentifier::MCATitle, ValueDataType::Utf16)),
+              Ul::MCATitleVersion => return Some((ElementIdentifier::MCATitleVersion, ValueDataType::Utf16)),
+              Ul::MCATitleSubVersion => return Some((ElementIdentifier::MCATitleSubVersion, ValueDataType::Utf16)),
+              Ul::MCAEpisode => return Some((ElementIdentifier::MCAEpisode, ValueDataType::Utf16)),
+              Ul::MCAPartitionKind => return Some((ElementIdentifier::MCAPartitionKind, ValueDataType::Utf16)),
+              Ul::MCAPartitionNumber => return Some((ElementIdentifier::MCAPartitionNumber, ValueDataType::Utf16)),
+              Ul::MCAAudioContentKind => return Some((ElementIdentifier::MCAAudioContentKind, ValueDataType::Utf16)),
+              Ul::MCAAudioElementKind => return Some((ElementIdentifier::MCAAudioElementKind, ValueDataType::Utf16)),
+              Ul::RFC5646SpokenLanguage => return Some((ElementIdentifier::RFC5646SpokenLanguage, ValueDataType::String)),
+
               Ul::Mpeg2VideoDescriptorSingleSequence => return Some((ElementIdentifier::Mpeg2VideoDescriptorSingleSequence, ValueDataType::Boolean)),
               Ul::Mpeg2VideoDescriptorCodedContentType => return Some((ElementIdentifier::Mpeg2VideoDescriptorCodedContentType, ValueDataType::Uint8)),
               Ul::Mpeg2VideoDescriptorBPictureCount => return Some((ElementIdentifier::Mpeg2VideoDescriptorBPictureCount, ValueDataType::Uint16)),
@@ -846,9 +883,12 @@ pub fn get_tag_identifier(id: u16, dynamic_tags: &mut Vec<DynamicTagList>) -> Op
               Ul::Jpeg2000VideoDescriptor_YTOsiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_YTOsiz, ValueDataType::Uint32)),
               Ul::Jpeg2000VideoDescriptor_Csiz => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_Csiz, ValueDataType::Uint16)),
               Ul::Jpeg2000VideoDescriptor_PictureComponentSizing => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_PictureComponentSizing, ValueDataType::J2KComponentSizing)),
+              // Ul::Jpeg2000VideoDescriptor_CodingStyleDefault => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_CodingStyleDefault, ValueDataType::J2KComponentSizing)),
+              // Ul::Jpeg2000VideoDescriptor_QuantizationDefault => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_QuantizationDefault, ValueDataType::J2KComponentSizing)),
+              // Ul::Jpeg2000VideoDescriptor_J2CLayout => return Some((ElementIdentifier::Jpeg2000VideoDescriptor_J2CLayout, ValueDataType::J2KComponentSizing)),
               _ => {
 
-                println!("dynamic tag not supported: {:?}", dynamic_tag.identifier);
+                println!("dynamic tag {:0x} not supported: {:?}", id, dynamic_tag.identifier);
                 return None
               }
             }
