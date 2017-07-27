@@ -1,17 +1,10 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
 use serializer::encoder::*;
-use klv::ul::Ul;
 
 pub struct Tag {
   pub id: [u8; 2],
   pub data: Vec<u8>
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct DynamicTagList {
-  pub tag: u16,
-  pub identifier: Ul
 }
 
 impl Encoder for Tag {

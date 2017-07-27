@@ -2,8 +2,7 @@
 use byteorder::{BigEndian, ReadBytesExt};
 use klv::klv_reader::*;
 use klv::value::value::*;
-use klv::ul::match_ul;
-use klv::value::tag::DynamicTagList;
+use klv::ul::*;
 
 use std::io::{Read, Seek};
 
@@ -22,7 +21,7 @@ pub fn parse_primer_pack<R: Read + Seek>(reader: &mut KlvReader<R>) -> Result<Ve
 
         match match_ul(ul_data) {
           Some(ul) => {
-            let dynamic_tag = DynamicTagList{
+            let dynamic_tag = DynamicTag {
               tag: tag,
               identifier: ul
             };
@@ -39,10 +38,10 @@ pub fn parse_primer_pack<R: Read + Seek>(reader: &mut KlvReader<R>) -> Result<Ve
 
   Ok(vec![
     Element{
-      identifier: ElementIdentifier::PrimerPack{
-        data: mapping
-      },
-      value: None
+      identifier: Ul::PrimerPack,
+      value: Some(ValueData::DynamicTags {
+        entries: mapping
+      })
     },
   ])
 }

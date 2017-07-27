@@ -1,9 +1,9 @@
 
 use std::io::{Read, Seek};
-use klv::value::tag::DynamicTagList;
+use klv::value::value::DynamicTag;
 
 #[derive(Debug, PartialEq)]
 pub struct KlvReader<R: Read + Seek> {
   pub stream: R,
-  pub elements: Vec<DynamicTagList>
+  pub elements: Vec<DynamicTag>
 }

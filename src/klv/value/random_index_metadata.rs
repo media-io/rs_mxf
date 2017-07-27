@@ -1,5 +1,6 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
+use klv::ul::*;
 use klv::klv_reader::*;
 use klv::value::value::*;
 
@@ -27,7 +28,7 @@ pub fn parse_random_index_metadata<R: Read + Seek>(reader: &mut KlvReader<R>, si
 
   Ok(vec![
     Element{
-      identifier: ElementIdentifier::RandomIndexMetadata,
+      identifier: Ul::RandomIndexMetadata,
       value: value
     },
   ])

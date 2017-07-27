@@ -7,14 +7,11 @@ pub mod serializer;
 #[cfg(test)]
 mod test {
   // use serializer::decoder::*;
-  use serializer::encoder::*;
+  // use serializer::encoder::*;
+  use klv::ul::*;
   use klv::klv::*;
   use klv::klv_reader::*;
-  use klv::key::partition::*;
-  use klv::key::dict::*;
-  use klv::key::key::Key;
   use klv::value::value::*;
-  use klv::value::essence_identifiers::*;
   use klv::value::value::Element;
 
   #[test]
@@ -64,200 +61,154 @@ mod test {
     let valid_klv = next_klv(&mut reader).unwrap().unwrap();
     
     assert_eq!(valid_klv, Klv {
-      key: Key {
-        identifier: KeyIdentifier::HeaderPartition{status: PartitionStatus::ClosedAndComplete}
-      },
+      key: Ul::HeaderPartition,
       value: Value {
         elements: vec![
           Element {
-            identifier: ElementIdentifier::PartitionMajor {value: 1},
-            value: None
+            identifier: Ul::PartitionMajor,
+            value: Some(ValueData::Uint16{ data: 1 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionMinor {value: 2},
-            value: None
+            identifier: Ul::PartitionMinor,
+            value: Some(ValueData::Uint16{ data: 2 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionKagSize {size: 256},
-            value: None
+            identifier: Ul::PartitionKagSize,
+            value: Some(ValueData::Uint32{ data: 256 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionThisPartition {offset: 0},
-            value: None
+            identifier: Ul::PartitionThisPartition,
+            value: Some(ValueData::Uint64{ data: 0 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionPreviousPartition {offset: 0},
-            value: None
+            identifier: Ul::PartitionPreviousPartition,
+            value: Some(ValueData::Uint64{ data: 0 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionFooterPartition {offset: 0},
-            value: None
+            identifier: Ul::PartitionFooterPartition,
+            value: Some(ValueData::Uint64{ data: 0 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionHeaderByteCount {size: 0},
-            value: None
+            identifier: Ul::PartitionHeaderByteCount,
+            value: Some(ValueData::Uint64{ data: 0 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionIndexByteCount {size: 0},
-            value: None
+            identifier: Ul::PartitionIndexByteCount,
+            value: Some(ValueData::Uint64{ data: 0 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionIndexSid {value: 0},
-            value: None
+            identifier: Ul::PartitionIndexSid,
+            value: Some(ValueData::Uint32{ data: 0 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionByteOffset {offset: 0},
-            value: None
+            identifier: Ul::PartitionByteOffset,
+            value: Some(ValueData::Uint64{ data: 0 })
           },
           Element {
-            identifier: ElementIdentifier::PartitionBodySid {value: 0},
-            value: None
+            identifier: Ul::PartitionBodySid,
+            value: Some(ValueData::Uint32{ data: 0 })
           },
+          // Element {
+          //   identifier: Ul::PartitionOperationalPattern,
+          //   value: None
+          // },
           Element {
-            identifier: ElementIdentifier::PartitionOperationalPattern {
-              item_complexity: 1,
-              package_complexity: 'a',
-              internal_essence: true,
-              stream_file: true,
-              uni_track: false
-            },
-            value: None
-          },
-          Element {
-            identifier: ElementIdentifier::PartitionEssenceContainers {
-              essences: vec![EssenceIdentifier::MpegEsWithStreamIdFrameWrapped]
-            },
-            value: None
+            identifier: Ul::PartitionEssenceContainers,
+            value: Some(ValueData::ArrayUl {
+              data: vec![Ul::Essence_MpegEsWithStreamIdFrameWrapped]
+            })
           }
         ]
       }
     });
   }
 
-  #[test]
-  fn generate_file() {
-    use std::io::prelude::*;
-    use std::io::Cursor;
+  // #[test]
+  // fn generate_file() {
+  //   use std::io::prelude::*;
+  //   use std::io::Cursor;
 
-    let mut stream = Cursor::new(vec![0; 0]);
+  //   let mut stream = Cursor::new(vec![0; 0]);
 
-    let header_key = Key {
-      identifier: KeyIdentifier::HeaderPartition{status: PartitionStatus::ClosedAndComplete}
-    };
+  //   let header_value = Value {
+  //     elements: vec![
+  //       Element{
+  //         identifier: Ul::PartitionMajor,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionMinor,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionKagSize,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionThisPartition,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionPreviousPartition,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionFooterPartition,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionHeaderByteCount,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionIndexByteCount,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionIndexSid,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionByteOffset,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionBodySid,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionOperationalPattern,
+  //         value: None
+  //       },
+  //       Element{
+  //         identifier: Ul::PartitionEssenceContainers,
+  //         value: None
+  //       },
+  //     ]
+  //   };
 
-    let header_value = Value {
-      elements: vec![
-        Element{
-          identifier: ElementIdentifier::PartitionMajor{value: 1},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionMinor{value: 2},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionKagSize{size: 512},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionThisPartition{offset: 0},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionPreviousPartition{offset: 0},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionFooterPartition{offset: 0},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionHeaderByteCount{size: 0},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionIndexByteCount{size: 0},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionIndexSid{value: 0},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionByteOffset{offset: 0},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionBodySid{value: 0},
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionOperationalPattern {
-            item_complexity: 1,
-            package_complexity: 'a',
-            internal_essence: true,
-            stream_file: true,
-            uni_track: false
-          },
-          value: None
-        },
-        Element{
-          identifier: ElementIdentifier::PartitionEssenceContainers { essences: vec![] },
-          value: None
-        },
-      ]
-    };
+  //   let header_klv = Klv {
+  //     key: Ul::HeaderPartition,
+  //     value: header_value
+  //   };
 
-    let header_klv = Klv {
-      key: header_key,
-      value: header_value
-    };
+  //   stream.write(Encoder::serialise(&header_klv).as_ref()).unwrap();
 
-    stream.write(Encoder::serialise(&header_klv).as_ref()).unwrap();
+  //   let frame_value = Value {
+  //     elements: vec![
+  //       Element{
+  //         identifier: Ul::Unknown,
+  //         value: None
+  //       }
+  //     ]
+  //   };
 
-    // let static_track_key = Key {
-    //   identifier: KeyIdentifier::StaticTrackSet
-    // };
+  //   let frame_klv = Klv {
+  //     key: Ul::PictureItemMpegFrameWrappedPictureElement,
+  //     value: frame_value
+  //   };
 
-    // let static_track_value = Value {
-    //   elements: vec![
-    //     Element{
-    //       identifier: ElementIdentifier::InstanceUid,
-    //       value: None
-    //     },
-    //     Element{
-    //       identifier: ElementIdentifier::GenerationIdentifier,
-    //       value: None
-    //     },
-    //   ]
-    // };
-
-    // let static_track_klv = Klv {
-    //   key: static_track_key,
-    //   value: static_track_value
-    // };
-
-    // stream.write(Encoder::serialise(&static_track_klv).as_ref()).unwrap();
-
-    let frame_key = Key {
-      identifier: KeyIdentifier::PictureItemMpegFrameWrappedPictureElement
-    };
-
-    let frame_value = Value {
-      elements: vec![
-        Element{
-          identifier: ElementIdentifier::Data{data: vec![0x00; 2000]},
-          value: None
-        }
-      ]
-    };
-
-    let frame_klv = Klv {
-      key: frame_key,
-      value: frame_value
-    };
-
-    stream.write(Encoder::serialise(&frame_klv).as_ref()).unwrap();
-    assert_eq!(stream.get_ref().len(), 2124);
-  }
+  //   stream.write(Encoder::serialise(&frame_klv).as_ref()).unwrap();
+  //   assert_eq!(stream.get_ref().len(), 2124);
+  // }
 }

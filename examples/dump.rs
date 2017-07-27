@@ -5,11 +5,9 @@ use std::io::BufReader;
 use std::fs::File;
 use std::{env, process};
 
-use mxf::klv::key::dict::*;
 use mxf::klv::klv::*;
 use mxf::klv::klv_reader::*;
-
-use mxf::klv::value::value::ElementIdentifier::ContentData;
+use mxf::klv::ul::*;
 
 fn display_error() {
   println!("ERROR: missing filepath argument.");
@@ -91,28 +89,30 @@ fn main() {
       Ok(maybe_klv) => {
         match maybe_klv {
           Some(klv) => {
-            match (filter_video_frame, filter_sound_wave, klv.key.identifier.clone()) {
-              (_, _, KeyIdentifier::FillItem) |
-              (_, _, KeyIdentifier::FillItemAvid) |
-              (_, _, KeyIdentifier::SystemItemSystemMetadataPack) |
-              (_, _, KeyIdentifier::SystemItemPackageMetadataSet) |
-              (_, true, KeyIdentifier::SoundItemWaveDataWrappedSoundElement) |
-              (true, _, KeyIdentifier::PictureItemMpegFrameWrappedPictureElement) |
-              (true, _, KeyIdentifier::Jpeg2000FrameWrapped) |
-              (true, _, KeyIdentifier::Jpeg2000ClipWrapped) => {
+            match (filter_video_frame, filter_sound_wave, klv.key.clone()) {
+              (_, _, Ul::FillItem) |
+              (_, _, Ul::FillItemAvid) |
+              (_, _, Ul::IndexTableSegment) |
+              (_, _, Ul::BodyPartition{..}) |
+              (_, _, Ul::SystemItemSystemMetadataPack) |
+              (_, _, Ul::SystemItemPackageMetadataSet) |
+              (_, true, Ul::SoundItemWaveDataWrappedSoundElement) |
+              (true, _, Ul::PictureItemMpegFrameWrappedPictureElement) |
+              (true, _, Ul::Jpeg2000FrameWrapped) |
+              (true, _, Ul::Jpeg2000ClipWrapped) => {
               },
               _ => {
                 // println!("{:?}", klv);
-                if klv.value.elements.len() == 1 {
-                  match klv.value.elements[0].identifier {
-                    ContentData{..} => {
-                      println!("{:?}", klv);
-                    },
-                    _ => {}
-                  }
-                } else {
-                  // println!("{:?}", klv);
-                }
+                // if klv.value.elements.len() == 1 {
+                //   match klv.value.elements[0].identifier {
+                //     ContentData{..} => {
+                //       println!("{:?}", klv);
+                //     },
+                //     _ => {}
+                //   }
+                // } else {
+                //   // println!("{:?}", klv);
+                // }
               },
             }
           },

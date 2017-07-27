@@ -1,6 +1,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 
+use klv::ul::*;
 use klv::klv_reader::*;
 use klv::value::value::*;
 use std::io::{Read, Seek};
@@ -58,10 +59,10 @@ pub fn parse_set<R: Read + Seek>(reader: &mut KlvReader<R>, size: usize) -> Resu
             (ValueDataType::Uint8, 1) => {
               let value = reader.stream.read_u8().unwrap();
 
-              if identifier == ElementIdentifier::SliceCount {
+              if identifier == Ul::SliceCount {
                 slice_count = Some(value);
               }
-              if identifier == ElementIdentifier::PositionTableCount {
+              if identifier == Ul::PositionTableCount {
                 posistion_table_count = Some(value);
               }
 
@@ -185,10 +186,12 @@ pub fn parse_set<R: Read + Seek>(reader: &mut KlvReader<R>, size: usize) -> Resu
               })
             },
             (ValueDataType::Ul, 16) => {
-              let value = value_to_string_format(reader, tag_length as usize).unwrap();
-              Some(ValueData::Ul{
-                data: value
-              })
+              let mut ul_data = vec![0; 16];
+              reader.stream.read_exact(&mut ul_data).unwrap();
+              match match_ul(ul_data) {
+                Some(ul) => Some(ValueData::Ul{data: ul}),
+                None => None,
+              }
             },
             (ValueDataType::StrongRef, 16) => {
               let value = value_to_string_format(reader, tag_length as usize).unwrap();
@@ -249,7 +252,7 @@ pub fn parse_set<R: Read + Seek>(reader: &mut KlvReader<R>, size: usize) -> Resu
                 data: string
               })
             }
-            (ValueDataType::RgbaLayout, 16) => {
+            (ValueDataType::ChannelLayout, 16) => {
               let mut layouts = vec![];
               for _i in 0..8 {
                 let code = reader.stream.read_u8().unwrap();
@@ -261,7 +264,7 @@ pub fn parse_set<R: Read + Seek>(reader: &mut KlvReader<R>, size: usize) -> Resu
                   })
                 }
               }
-              Some(ValueData::RgbaLayout{
+              Some(ValueData::ChannelLayout{
                 data: layouts
               })
             },

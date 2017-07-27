@@ -1,7 +1,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
+use klv::ul::*;
 use klv::value::value::*;
-use klv::value::essence_identifiers::*;
 
 use std::io::Read;
 
@@ -64,64 +64,92 @@ pub fn parse_partition<R: Read>(stream: &mut R) -> Result<Vec<Element>, String> 
   for _index in 0..count_ul_essences {
     let mut essence_ul = vec![0; 16];
     stream.read_exact(&mut essence_ul).unwrap();
-    let essence_kind = parse_essence_ul(essence_ul);
-    essences_kind.push(essence_kind);
+    match match_ul(essence_ul) {
+      Some(essence_kind) => {
+        essences_kind.push(essence_kind);
+      },
+      None => {}
+    }
   }
 
   Ok(vec![
     Element{
-      identifier: ElementIdentifier::PartitionMajor{value: partition_major},
-      value: None
+      identifier: Ul::PartitionMajor,
+      value: Some(ValueData::Uint16{
+        data: partition_major
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionMinor{value: partition_minor},
-      value: None
+      identifier: Ul::PartitionMinor,
+      value: Some(ValueData::Uint16{
+        data: partition_minor
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionKagSize{size: kag_size},
-      value: None
+      identifier: Ul::PartitionKagSize,
+      value: Some(ValueData::Uint32{
+        data: kag_size
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionThisPartition{offset: this_partition},
-      value: None
+      identifier: Ul::PartitionThisPartition,
+      value: Some(ValueData::Uint64{
+        data: this_partition
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionPreviousPartition{offset: previous_partition},
-      value: None
+      identifier: Ul::PartitionPreviousPartition,
+      value: Some(ValueData::Uint64{
+        data: previous_partition
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionFooterPartition{offset: footer_partition},
-      value: None
+      identifier: Ul::PartitionFooterPartition,
+      value: Some(ValueData::Uint64{
+        data: footer_partition
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionHeaderByteCount{size: header_byte_count},
-      value: None
+      identifier: Ul::PartitionHeaderByteCount,
+      value: Some(ValueData::Uint64{
+        data: header_byte_count
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionIndexByteCount{size: index_byte_count},
-      value: None
+      identifier: Ul::PartitionIndexByteCount,
+      value: Some(ValueData::Uint64{
+        data: index_byte_count
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionIndexSid{value: index_sid},
-      value: None
+      identifier: Ul::PartitionIndexSid,
+      value: Some(ValueData::Uint32{
+        data: index_sid
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionByteOffset{offset: byte_offset},
-      value: None
+      identifier: Ul::PartitionByteOffset,
+      value: Some(ValueData::Uint64{
+        data: byte_offset
+      })
     },
     Element{
-      identifier: ElementIdentifier::PartitionBodySid{value: body_sid},
-      value: None
+      identifier: Ul::PartitionBodySid,
+      value: Some(ValueData::Uint32{
+        data: body_sid
+      })
     },
+    // Element{
+    //   identifier: Ul::PartitionOperationalPattern,
+    //   value: Some(ValueData::Ul{
+    //     data: match_ul(op_ul).unwrap()
+    //   })
+    // },
     Element{
-      identifier: parse_operational_pattern(op_ul).unwrap(),
-      value: None
-    },
-    Element{
-      identifier: ElementIdentifier::PartitionEssenceContainers {
-        essences: essences_kind
-      },
-      value: None
+      identifier: Ul::PartitionEssenceContainers,
+      value: Some(ValueData::ArrayUl{
+        data: essences_kind
+      })
     }
   ])
 }
