@@ -7,7 +7,7 @@ use std::{env, process};
 
 use mxf::klv::klv::*;
 use mxf::klv::klv_reader::*;
-use mxf::klv::ul::*;
+use mxf::klv::ul::ul::*;
 
 fn display_error() {
   println!("ERROR: missing filepath argument.");
@@ -102,7 +102,7 @@ fn main() {
               (true, _, Ul::Jpeg2000ClipWrapped) => {
               },
               _ => {
-                // println!("{:?}", klv);
+                println!("{:?}", klv);
                 // if klv.value.elements.len() == 1 {
                 //   match klv.value.elements[0].identifier {
                 //     ContentData{..} => {

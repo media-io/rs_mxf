@@ -1,6 +1,6 @@
 
 use std::io::{Read, Seek};
-use klv::value::value::DynamicTag;
+use klv::value::value_data::DynamicTag;
 
 #[derive(Debug, PartialEq)]
 pub struct KlvReader<R: Read + Seek> {

@@ -43,16 +43,12 @@ pub fn parse<R: Read>(stream: &mut R) -> Result<Option<Length>, String> {
   let mut length = vec![0; 1];
   try!(stream.read_exact(&mut length).map_err(|e| e.to_string()));
 
-  // println!("length {:x}", length[0]);
-
   if length[0] <= 0x7f {
     Ok(Some(Length{value: length[0] as usize}))
   } else {
     let size = length[0] - 0x80;
     let mut data = vec![0; size as usize];
     try!(stream.read_exact(&mut data).map_err(|e| e.to_string()));
-
-    // println!("length size = {:?}", size);
 
     let long_length = 
       match size {
@@ -81,8 +77,7 @@ pub fn parse<R: Read>(stream: &mut R) -> Result<Option<Length>, String> {
         8 => BigEndian::read_u64(&data) as usize,
         _ => return Err("wrong length".to_string())
       };
-    
-    // println!("long_length {:?}", long_length);
+
     Ok(Some(Length{value: long_length as usize}))
   }
 }

@@ -1,10 +1,12 @@
 
+use klv::value::partition::*;
+
 #[derive(Debug, Clone, PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum Ul {
-  HeaderPartition,
-  BodyPartition,
-  FooterPartition,
+  HeaderPartition {status: Option<PartitionStatus>},
+  BodyPartition {status: Option<PartitionStatus>},
+  FooterPartition {status: Option<PartitionStatus>},
   PrimerPack,
   RandomIndexMetadata,
   SequenceSet,
@@ -42,6 +44,7 @@ pub enum Ul {
   SoundEssenceTrack,
   DataEssenceTrack,
   DescriptiveMetadataTrack,
+
   SMPTE12MTimecodeTrackInactiveUserBits,
   SMPTE12MTimecodeTrackActiveUserBits,
   PictureItemMpegFrameWrappedPictureElement,
@@ -338,7 +341,7 @@ pub enum Ul {
   PartitionHeaderByteCount,
   PartitionIndexByteCount,
   PartitionIndexSid,
-  PartitionByteOffset,
+  PartitionBodyOffset,
   PartitionBodySid,
   PartitionOperationalPattern,
   PartitionEssenceContainers,
@@ -622,9 +625,10 @@ macro_rules! tuple_to_vec {
 }
 
 macro_rules! vec_ul {
-  (Ul::HeaderPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::HeaderPartition, $status)););
-  (Ul::BodyPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::BodyPartition, $status)));
-  (Ul::FooterPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::FooterPartition, $status)));
+  (Ul::OperationalPattern) => (tuple_to_vec!(smpte_identifier!(Ul::OperationalPattern)););
+  (Ul::HeaderPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::HeaderPartition{status: None}, $status)););
+  (Ul::BodyPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::BodyPartition{status: None}, $status)));
+  (Ul::FooterPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::FooterPartition{status: None}, $status)));
   (Ul::PrimerPack) => (tuple_to_vec!(partition_identifier!(Ul::PrimerPack)));
   (Ul::RandomIndexMetadata) => (tuple_to_vec!(partition_identifier!(Ul::RandomIndexMetadata)));
   (Ul::StaticTrack) => (tuple_to_vec!(smpte_identifier!(SmpteRegitery::Set, 0x3a)));
@@ -749,9 +753,9 @@ macro_rules! build_identifier {
 macro_rules! partition_identifier {
   ($ul:expr, $status:expr) => (
     match $ul {
-      Ul::HeaderPartition => partition_status_identifier!(0x02, $status),
-      Ul::BodyPartition => partition_status_identifier!(0x03, $status),
-      Ul::FooterPartition => partition_status_identifier!(0x04, $status),
+      Ul::HeaderPartition{..} => partition_status_identifier!(0x02, $status),
+      Ul::BodyPartition{..} => partition_status_identifier!(0x03, $status),
+      Ul::FooterPartition{..} => partition_status_identifier!(0x04, $status),
       _ => panic!("Not covered Partition identifier")
     }
   );
@@ -777,7 +781,13 @@ macro_rules! smpte_identifier {
     smpte_identifier!(0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, $x, $status, 0x00)
   );
   (SmpteRegitery::Partition, $x:tt) => (
-    smpte_identifier!(0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, $x, _, 0x00)
+    smpte_identifier!(0x02, 0x05, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, $x, _status, 0x00)
+  );
+  (Ul::OperationalPattern) => (
+    smpte_identifier!(0x01, 0x01, 0x01, 0x05, 0x01, 0x02, 0x02, 0x03, 0x00, 0x00, 0x00, 0x00)
+  );
+  (Ul::MxfOP1aSingleItemSinglePackageMultiTrackStreamInternal) => (
+    smpte_identifier!(0x04, 0x01, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x01, 0x09, 0x00)
   );
   (SmpteRegitery::Set, $x:tt) => (
     smpte_identifier!(0x02, 0x53, 0x01, 0x01, 0x0d, 0x01, 0x01, 0x01, 0x01, 0x01, $x, 0x00)
@@ -800,11 +810,9 @@ macro_rules! smpte_identifier {
   );
 }
 
-
 pub fn match_ul(data: Vec<u8>) -> Option<Ul> {
   get_ul(data)
 }
-
 
 fn get_set_kind(v: u8) -> Ul {
   match v {
@@ -846,13 +854,13 @@ fn get_ul(data: Vec<u8>) -> Option<Ul> {
   let ul =
     match (data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]) {
       ul_filter!(Ul::HeaderPartition) => {
-        Ul::HeaderPartition
+        Ul::HeaderPartition{status: Some(parse_status(data[14]))}
       },
       ul_filter!(Ul::BodyPartition) => {
-        Ul::BodyPartition
+        Ul::HeaderPartition{status: Some(parse_status(data[14]))}
       },
       ul_filter!(Ul::FooterPartition) => {
-        Ul::FooterPartition
+        Ul::HeaderPartition{status: Some(parse_status(data[14]))}
       },
       ul_filter!(Ul::PrimerPack) => {
         Ul::PrimerPack

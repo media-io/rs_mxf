@@ -1,315 +1,10 @@
 
+use byteorder::{BigEndian, WriteBytesExt};
 use serializer::encoder::*;
-use klv::ul::*;
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum LayoutCode {
-    RedComponent,
-    GreenComponent,
-    BlueComponent,
-    AlphaComponent,
-    FillComponent,
-    PaletteCode,
-    UChromaSample,
-    VChromaSample,
-    WCompositeVideo,
-    XNonCositedLuminanceComponent,
-    YLuminanceComponent,
-    ZDepthComponent,
-    CompColorX,
-    CompColorY,
-    CompColorZ,
-    Reserved,
-}
-
-pub fn get_layout(value: u8) -> LayoutCode {
-  match value {
-    0x52 => LayoutCode::RedComponent,
-    0x47 => LayoutCode::GreenComponent,
-    0x42 => LayoutCode::BlueComponent,
-    0x41 => LayoutCode::AlphaComponent,
-    0x72 => LayoutCode::RedComponent,
-    0x67 => LayoutCode::GreenComponent,
-    0x62 => LayoutCode::BlueComponent,
-    0x61 => LayoutCode::AlphaComponent,
-    0x46 => LayoutCode::FillComponent,
-    0x50 => LayoutCode::PaletteCode,
-    0x55 => LayoutCode::UChromaSample,
-    0x56 => LayoutCode::VChromaSample,
-    0x57 => LayoutCode::WCompositeVideo,
-    0x58 => LayoutCode::XNonCositedLuminanceComponent,
-    0x59 => LayoutCode::YLuminanceComponent,
-    0x5A => LayoutCode::ZDepthComponent,
-    0x75 => LayoutCode::UChromaSample,
-    0x76 => LayoutCode::VChromaSample,
-    0x77 => LayoutCode::WCompositeVideo,
-    0x78 => LayoutCode::XNonCositedLuminanceComponent,
-    0x79 => LayoutCode::YLuminanceComponent,
-    0x7A => LayoutCode::ZDepthComponent,
-    0xD8 => LayoutCode::CompColorX,
-    0xD9 => LayoutCode::CompColorY,
-    0xDA => LayoutCode::CompColorZ,
-    _ => LayoutCode::Reserved,
-  }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Layout {
-  pub code: LayoutCode,
-  pub bit_depth: u8
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Orientation {
-  LeftToRightTopToBottom,
-  RightToLeftTopToBottom,
-  LeftToRightBottomToTop,
-  RightToLeftBottomToTop,
-  TopToBottomLeftToRight,
-  TopToBottomRightToLeft,
-  BottomToTopLeftToRight,
-  BottomToTopRightToLeft,
-  Reserved
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Mpeg2Profile {
-  Simple,
-  Main,
-  SnrScalable,
-  SpatiallyScalable,
-  High,
-  FourTwoTwo,
-  Reserved
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Mpeg2Level {
-  Low,
-  Main,
-  High1440,
-  High,
-  HighP,
-  Reserved,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Mpeg2CodedContentType {
-  Unknown,
-  Progressive,
-  Interlaced,
-  Mixed,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct J2KComponent {
-  pub s_siz: u8,
-  pub xr_siz: u8,
-  pub yr_siz: u8,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct DeltaEntry {
-  pub position_table_index: i8,
-  pub slice: u8,
-  pub element_delta: u32,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Rational {
-  pub num: u32,
-  pub den: u32
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct IndexEntry {
-  pub temporal_offset: i8,
-  pub key_frame_offset: i8,
-  pub flags: u8,
-  pub stream_offset: u64,
-  pub slice_offset: Vec<u32>,
-  pub position_table: Vec<Rational>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct RandomIndexEntry {
-  pub body_sid: u32,
-  pub byte_offset: u64,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct DynamicTag {
-  pub tag: u16,
-  pub identifier: Ul
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum ValueData {
-  Boolean {
-    data: bool
-  },
-  Int8 {
-      data: i8
-  },
-  Int16 {
-      data: i16
-  },
-  Uint8 {
-    data: u8
-  },
-  Uint16 {
-    data: u16
-  },
-  Uint32 {
-    data: u32
-  },
-  Uint64 {
-    data: u64
-  },
-  Length {
-    data: u64
-  },
-  Position {
-    data: u64
-  },
-  String {
-    data: String
-  },
-  Ul {
-    data: Ul
-  },
-  Uuid {
-    data: String
-  },
-  Umid {
-    data: String
-  },
-  PackageId {
-    data: String
-  },
-  StrongRef {
-    data: String
-  },
-  WeakRef {
-    data: String
-  },
-  Rational {
-    num: u64,
-    den: u64
-  },
-  Version {
-    major: u8,
-    minor: u8
-  },
-  ProductVersion {
-    major: u16,
-    minor: u16,
-    patch: u16,
-    build: u16,
-    release: u16,
-  },
-  Timestamp {
-    year: u16,
-    month: u8,
-    day: u8,
-    hour: u8,
-    minute: u8,
-    second: u8,
-    quarter_of_milliseconds: u8,
-  },
-  ChannelLayout {
-    data: Vec<Layout>
-  },
-  ArrayNumber {
-    data: Vec<u64>
-  },
-  ArrayString {
-    data: Vec<String>
-  },
-  ArrayUl {
-    data: Vec<Ul>
-  },
-  Orientation {
-    data: Orientation
-  },
-  ProfileAndLevel {
-    profile: Mpeg2Profile,
-    level: Mpeg2Level
-  },
-  CodedContentType {
-    mode: Mpeg2CodedContentType
-  },
-  J2KComponentSizing {
-    components: Vec<J2KComponent>
-  },
-  DeltaEntries {
-    entries: Vec<DeltaEntry>
-  },
-  IndexEntries {
-    entries: Vec<IndexEntry>
-  },
-  RandomIndexEntries {
-    entries: Vec<RandomIndexEntry>
-  },
-  DynamicTags {
-    entries: Vec<DynamicTag>
-  },
-  ContentData {
-    address: u64,
-    size: usize
-  },
-  Unknown {
-    data: Vec<u8>
-  }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum ValueDataType {
-  Boolean,
-  Uint8Array,
-  BytesArray,
-  Int8,
-  Int16,
-  Uint8,
-  Uint16,
-  Uint32,
-  Uint32X2,
-  Length,
-  Position,
-  Ul,
-  UlBatch,
-  String,
-  Utf16,
-  Uuid,
-  Umid,
-  Locators,
-  Rational,
-  Timestamp,
-  PackageId,
-  Stream,
-  Version,
-  ProductVersion,
-  ChannelLayout,
-  Orientation,
-  DataValue,
-  WeakRef,
-  StrongRef,
-  StrongRefArray,
-  StrongRefBatch,
-  TrackIdBatch,
-  J2KComponentSizing,
-  J2KCodingStyleDefault,
-  J2KQuantisationDefault,
-  DeltaEntries,
-  IndexEntries,
-  Unknown,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Element {
-  pub identifier: Ul,
-  pub value: Option<ValueData>,
-}
+use klv::ul::ul::Ul;
+use klv::value::element::Element;
+use klv::value::value_data::*;
+use klv::value::value_data_type::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Value {
@@ -318,68 +13,86 @@ pub struct Value {
 
 impl Encoder for Value {
   fn serialise(&self) -> Vec<u8> {
-    let result = vec![];
-    for _element in self.elements.clone() {
-      // match element.identifier {
-      //   _ => {
-      //     unimplemented!()
-      //   }
-      // }
+    let mut result = vec![];
+    for element in self.elements.clone() {
+      match element.identifier {
+        Ul::PartitionMajor |
+        Ul::PartitionMinor => {
+          let value =
+            match element.value.unwrap() {
+              ValueData::Uint16{data} => {data},
+              _ => {
+                panic!("impossible to serialise data");
+              }
+            };
+
+          result.write_u16::<BigEndian>(value).unwrap();
+        },
+        Ul::PartitionKagSize |
+        Ul::PartitionIndexSid |
+        Ul::PartitionBodySid => {
+          let value =
+            match element.value.unwrap() {
+              ValueData::Uint32{data} => {data},
+              _ => {
+                panic!("impossible to serialise data");
+              }
+            };
+
+          result.write_u32::<BigEndian>(value).unwrap();
+        },
+        Ul::PartitionThisPartition |
+        Ul::PartitionPreviousPartition |
+        Ul::PartitionFooterPartition |
+        Ul::PartitionHeaderByteCount |
+        Ul::PartitionIndexByteCount |
+        Ul::PartitionBodyOffset => {
+          let value =
+            match element.value.unwrap() {
+              ValueData::Uint64{data} => {data},
+              _ => {
+                panic!("impossible to serialise data");
+              }
+            };
+
+          result.write_u64::<BigEndian>(value).unwrap();
+        },
+        Ul::PartitionOperationalPattern => {
+          let value : Ul =
+            match element.value.unwrap() {
+              ValueData::Ul{data} => {data},
+              _ => {
+                panic!("impossible to serialise data");
+              }
+            };
+
+          let mut ul_data = Encoder::serialise(&value);
+          result.append(&mut ul_data);
+        },
+        Ul::PartitionEssenceContainers => {
+          let value =
+            match element.value.unwrap() {
+              ValueData::ArrayUl{data} => {data},
+              _ => {
+                panic!("impossible to serialise data");
+              }
+            };
+
+          result.write_u32::<BigEndian>(value.len() as u32).unwrap();
+          result.write_u32::<BigEndian>(16).unwrap();
+
+          for ul in value {
+            let mut ul_data = Encoder::serialise(&ul);
+            result.append(&mut ul_data);
+          }
+        },
+        _ => {
+        }
+      }
     }
     result
   }
 }
-
-// fn serialise_operational_pattern(item_complexity: u8, package_complexity: char, internal_essence: bool, stream_file: bool, uni_track: bool) -> Vec<u8> {
-//   let mut result = get_smpte_identifier();
-//   let mut op_identifier = vec![0x04, 0x01, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01];
-
-//   result.append(&mut op_identifier);
-//   result.push(item_complexity);
-//   match package_complexity {
-//     'a' => result.push(0x01),
-//     'b' => result.push(0x02),
-//     'c' => result.push(0x03),
-//     _ => panic!("unsupported package complexity")
-//   };
-
-//   let mut flags = 0x01;
-//   flags += (uni_track as u8) << 4;
-//   flags += (stream_file as u8) << 3;
-//   flags += (internal_essence as u8) << 2;
-
-//   result.push(flags);
-//   result.push(0x00);
-//   result
-// }
-
-// pub fn parse_operational_pattern(data: Vec<u8>) -> Option<ElementIdentifier> {
-//   match (data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]) {
-//     (0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, item_complexity, package_complexity_value, flags, _reserved) => {
-
-//       let package_complexity =
-//         match package_complexity_value {
-//           0x01 => {'a'},
-//           0x02 => {'b'},
-//           0x03 => {'c'},
-//           _ => {' '}
-//         };
-
-//       Some(
-//         ElementIdentifier::PartitionOperationalPattern{
-//           item_complexity: item_complexity,
-//           package_complexity: package_complexity,
-//           internal_essence: ((flags & 0b00000010) == 0),
-//           stream_file: ((flags & 0b00000100) == 0),
-//           uni_track: ((flags & 0b00001000) == 0),
-//         }
-//       )
-//     },
-//     (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _) => {
-//       None
-//     }
-//   }
-// }
 
 pub fn get_tag_identifier(id: u16, dynamic_tags: &mut Vec<DynamicTag>) -> Option<(Ul, ValueDataType)> {
   let (identifier, data_type) =

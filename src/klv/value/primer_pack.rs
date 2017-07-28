@@ -1,8 +1,9 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
+use klv::ul::ul::*;
 use klv::klv_reader::*;
-use klv::value::value::*;
-use klv::ul::*;
+use klv::value::value_data::*;
+use klv::value::element::Element;
 
 use std::io::{Read, Seek};
 

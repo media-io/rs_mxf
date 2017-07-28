@@ -1,7 +1,7 @@
 
 use serializer::encoder::*;
 
-use klv::ul::*;
+use klv::ul::ul::*;
 use klv::klv_reader::*;
 use klv::length::*;
 use klv::value::partition::*;
@@ -9,6 +9,8 @@ use klv::value::primer_pack::*;
 use klv::value::random_index_metadata::*;
 use klv::value::set::*;
 use klv::value::value::*;
+use klv::value::element::Element;
+use klv::value::value_data::*;
 
 use std::io::{Read, Seek, SeekFrom};
 
@@ -20,8 +22,7 @@ pub struct Klv {
 
 impl Encoder for Klv {
   fn serialise(&self) -> Vec<u8> {
-    let mut key_data = vec![];
-    // let mut key_data = Encoder::serialise(&self.key);
+    let mut key_data = Encoder::serialise(&self.key);
     let mut value_data = Encoder::serialise(&self.value);
 
     let length = Length{value: value_data.len()};
@@ -65,9 +66,9 @@ pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<
 
   let elements =
     match key {
-      Ul::HeaderPartition |
-      Ul::BodyPartition |
-      Ul::FooterPartition => {
+      Ul::HeaderPartition{..} |
+      Ul::BodyPartition{..} |
+      Ul::FooterPartition{..} => {
         parse_partition(&mut reader.stream).unwrap()
       },
       Ul::PrimerPack => {
