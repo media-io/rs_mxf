@@ -1,6 +1,7 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 
+use klv::ul::Ul;
 use klv::ul::ul::*;
 use klv::klv_reader::*;
 use klv::value::element::Element;

@@ -1,5 +1,6 @@
 
-use klv::ul::ul::Ul;
+use klv::ul::Ul;
+use timecode::timecode::Timecode;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LayoutCode {
@@ -256,6 +257,13 @@ pub enum ValueData {
   ContentData {
     address: u64,
     size: usize
+  },
+  SystemItemSystem {
+    channel_handle: u16,
+    continuity_count: u16,
+    essence_ul: Ul,
+    creation_timestamp: Option<Timecode>,
+    user_timestamp: Option<Timecode>,
   },
   Unknown {
     data: Vec<u8>

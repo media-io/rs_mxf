@@ -4,6 +4,7 @@ pub mod partition;
 pub mod primer_pack;
 pub mod random_index_metadata;
 pub mod set;
+pub mod system_item;
 pub mod tag;
 pub mod value;
 pub mod value_data;

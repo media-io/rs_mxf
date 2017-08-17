@@ -1,5 +1,6 @@
 
 extern crate byteorder;
+extern crate timecode;
 
 #[macro_use] pub mod klv;
 pub mod serializer;
@@ -165,6 +166,6 @@ mod test {
     // stream.write(Encoder::serialise(&frame_klv).as_ref()).unwrap();
 
     println!("{:?}", stream.get_ref());
-    assert_eq!(stream.get_ref().len(), 105);
+    assert_eq!(stream.get_ref().len(), 89);
   }
 }

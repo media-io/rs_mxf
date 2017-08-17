@@ -1,6 +1,6 @@
 
-use std::io::{Read};
+use std::io::{Error, Read};
 
 pub trait Decoder {
-  fn deserialize<Type, R: Read>(&self, stream: &mut R) -> Vec<Type>;
+  fn deserialize<R: Read>(&mut self, stream: &mut R) -> Result<bool, Error>;
 }

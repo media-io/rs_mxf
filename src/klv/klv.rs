@@ -1,13 +1,15 @@
 
+use serializer::decoder::*;
 use serializer::encoder::*;
 
-use klv::ul::ul::*;
+use klv::ul::*;
 use klv::klv_reader::*;
 use klv::length::*;
 use klv::value::partition::*;
 use klv::value::primer_pack::*;
 use klv::value::random_index_metadata::*;
 use klv::value::set::*;
+use klv::value::system_item::*;
 use klv::value::value::*;
 use klv::value::element::Element;
 use klv::value::value_data::*;
@@ -37,35 +39,28 @@ impl Encoder for Klv {
 
 pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<Klv>, String>
 {
-  let mut identifier_data = vec![0; 16];
-  match reader.stream.read_exact(&mut identifier_data) {
-    Ok(_some) => {},
-    Err(_msg) => {
+  let mut ul = Ul::Unknown;
+  match ul.deserialize(&mut reader.stream) {
+    Ok(true) => {},
+    Ok(false) => {
       return Ok(None)
     },
-  };
-  
-  let detected_key = match_ul(identifier_data);
-  let length = parse(&mut reader.stream).unwrap().unwrap();
+    Err(msg) => return Err(msg.to_string())
+  }
+
+  let mut length = Length{ ..Default::default() };
+  match length.deserialize(&mut reader.stream) {
+    Ok(true) => {},
+    Ok(false) => {
+      return Err("Unable to read length of the KLV element".to_string())
+    },
+    Err(msg) => return Err(msg.to_string())
+  }
+
   let address = reader.stream.seek(SeekFrom::Current(0)).unwrap();
 
-  let key =
-    match detected_key {
-        Some(ul) => {ul},
-        None => {
-          let _address = reader.stream.seek(SeekFrom::Current(length.value as i64)).unwrap();
-          let klv = Klv{
-            key: Ul::Unknown,
-            value: Value{
-              elements: vec![]
-            }
-          };
-          return Ok(Some(klv));
-        },
-    };
-
   let elements =
-    match key {
+    match ul {
       Ul::HeaderPartition{..} |
       Ul::BodyPartition{..} |
       Ul::FooterPartition{..} => {
@@ -76,6 +71,12 @@ pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<
       },
       Ul::RandomIndexMetadata => {
         parse_random_index_metadata(&mut reader, length.value).unwrap()
+      },
+      Ul::SystemItemSystemMetadataPack => {
+        parse_system_item_system(&mut reader, length.value).unwrap()
+      },
+      Ul::SystemItemPackageMetadataSet => {
+        parse_system_item_package(&mut reader, length.value).unwrap()
       },
       Ul::AS10CoreFramework => {
         let mut data = vec![0; length.value];
@@ -138,7 +139,7 @@ pub fn next_klv<R: Read + Seek>(mut reader: &mut KlvReader<R>) -> Result<Option<
   };
 
   let klv = Klv{
-    key: key,
+    key: ul,
     value: value
   };
 

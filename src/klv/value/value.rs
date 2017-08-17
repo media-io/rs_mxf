@@ -1,7 +1,7 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
 use serializer::encoder::*;
-use klv::ul::ul::Ul;
+use klv::ul::Ul;
 use klv::value::element::Element;
 use klv::value::value_data::*;
 use klv::value::value_data_type::*;

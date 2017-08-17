@@ -7,76 +7,82 @@ use std::{env, process};
 
 use mxf::klv::klv::*;
 use mxf::klv::klv_reader::*;
-use mxf::klv::ul::ul::*;
+use mxf::klv::ul::Ul;
 
 fn display_error() {
   println!("ERROR: missing filepath argument.");
   println!("usage:");
-  println!("       dump [filepath.mxf]");
+  println!("       dump [-avhf] [filepath.mxf]");
+  println!("");
+  println!(" -a, --audio: display audio elements");
+  println!(" -v, --video: display video elements");
+  println!(" -h, --header: display header elements");
+  println!(" -f, --footer: display footer elements");
+  println!(" --fill: display fill elements");
+  println!(" --si: display System Item elements");
+  println!(" --anc: display ANC elements");
+  println!("");
   process::exit(0x0f00);
 }
 
+#[derive(Debug)]
+struct Options {
+  filter_header: bool,
+  filter_footer: bool,
+  filter_body: bool,
+  filter_sound_wave: bool,
+  filter_video_frame: bool,
+  filter_fill: bool,
+  filter_system_item: bool,
+  filter_anc: bool,
+}
+
+impl Default for Options {
+  fn default() -> Options {
+    Options {
+      filter_header: true,
+      filter_footer: true,
+      filter_body: true,
+      filter_sound_wave: true,
+      filter_video_frame: true,
+      filter_fill: true,
+      filter_system_item: true,
+      filter_anc: true,
+    }
+  }
+}
+
 fn main() {
-  let mut filter_sound_wave = true;
-  let mut filter_video_frame = true;
+  let mut options = Options{..Default::default()};
 
-  let path =
-    match env::args().count() {
-      2 => {
-        env::args().last().unwrap()
-      },
-      3 => {
-        let arg1 = env::args().nth(1).unwrap();
-        let arg2 = env::args().nth(2).unwrap();
+  let mut path = None;
 
-        match (arg1.as_str(), arg2.as_str()) {
-          ("-v", tmp_path) |
-          (tmp_path, "-v") => {
-            filter_video_frame = false;
-            tmp_path.to_string()
-          },
-          ("-a", tmp_path) |
-          (tmp_path, "-a") => {
-            filter_sound_wave = false;
-            tmp_path.to_string()
-          },
-          (_, _) => {
-            display_error();
-            panic!("unable to parse parameters");
-          },
-        }
-      },
-      4 => {
-        let arg1 = env::args().nth(1).unwrap();
-        let arg2 = env::args().nth(2).unwrap();
-        let arg3 = env::args().nth(3).unwrap();
+  for arg in env::args().skip(1) {
+    // println!("{:?}", arg);
+    match arg.as_str() {
+      "-a" | "--audio" => {options.filter_sound_wave = false;},
+      "-v" | "--video" => {options.filter_video_frame = false;},
+      "-h" | "--header" => {options.filter_header = false;},
+      "-f" | "--footer"  => {options.filter_footer = false;},
+      "-b" | "--body"  => {options.filter_body = false;},
+      "--fill"  => {options.filter_fill = false;},
+      "--si"  => {options.filter_system_item = false;},
+      "--anc"  => {options.filter_anc = false;},
+      _ => path = Some(arg),
+    }
+  }
 
-        match (arg1.as_str(), arg2.as_str(), arg3.as_str()) {
-          ("-v", "-a", tmp_path) |
-          ("-a", "-v", tmp_path) |
-          ("-a", tmp_path, "-v") |
-          ("-v", tmp_path, "-a") |
-          (tmp_path, "-v", "-a") |
-          (tmp_path, "-a", "-v") => {
-            filter_video_frame = false;
-            filter_sound_wave = false;
-            tmp_path.to_string()
-          },
-          (_, _, _) => {
-            display_error();
-            panic!("unable to parse parameters");
-          },
-        }
-      },
-      _ => {
+  let file =
+    match path {
+      Some(path) => File::open(path).unwrap(),
+      None => {
         display_error();
-        panic!("Error");
-      }
+        return;
+      },
     };
 
   // println!("filter_video_frame {:?}", filter_video_frame);
   // println!("filter_sound_wave {:?}", filter_sound_wave);
-  let file = File::open(path).unwrap();
   let stream = BufReader::new(file);
 
   let mut reader = KlvReader{
@@ -89,30 +95,56 @@ fn main() {
       Ok(maybe_klv) => {
         match maybe_klv {
           Some(klv) => {
-            match (filter_video_frame, filter_sound_wave, klv.key.clone()) {
-              (_, _, Ul::FillItem) |
-              (_, _, Ul::FillItemAvid) |
-              (_, _, Ul::IndexTableSegment) |
-              (_, _, Ul::BodyPartition{..}) |
-              (_, _, Ul::SystemItemSystemMetadataPack) |
-              (_, _, Ul::SystemItemPackageMetadataSet) |
-              (_, true, Ul::SoundItemWaveDataWrappedSoundElement) |
-              (true, _, Ul::PictureItemMpegFrameWrappedPictureElement) |
-              (true, _, Ul::Jpeg2000FrameWrapped) |
-              (true, _, Ul::Jpeg2000ClipWrapped) => {
+            match (
+              options.filter_header,
+              options.filter_footer,
+              options.filter_body,
+              options.filter_video_frame,
+              options.filter_sound_wave,
+              options.filter_fill,
+              options.filter_system_item,
+              options.filter_anc,
+              klv.key.clone()) {
+              (true, _, _, _, _, _, _, _, Ul::HeaderPartition{..}) |
+              (true, _, _, _, _, _, _, _, Ul::PrimerPack) |
+              (true, _, _, _, _, _, _, _, Ul::MaterialPackageSet) |
+              (true, _, _, _, _, _, _, _, Ul::TrackSet) |
+              (true, _, _, _, _, _, _, _, Ul::StaticTrackSet) |
+              (true, _, _, _, _, _, _, _, Ul::ContentStorageSet) |
+              (true, _, _, _, _, _, _, _, Ul::FilePackageSet) |
+              (true, _, _, _, _, _, _, _, Ul::PrefaceSet) |
+              (true, _, _, _, _, _, _, _, Ul::SequenceSet) |
+              (true, _, _, _, _, _, _, _, Ul::SourceClipSet) |
+              (true, _, _, _, _, _, _, _, Ul::IdentificationSet) |
+              (true, _, _, _, _, _, _, _, Ul::TimecodeComponentSet) |
+              (true, _, _, _, _, _, _, _, Ul::MultipleDescriptorSet) |
+              (true, _, _, _, _, _, _, _, Ul::RgbaVideoDescriptor) |
+              (true, _, _, _, _, _, _, _, Ul::CdciVideoDescriptor) |
+              (true, _, _, _, _, _, _, _, Ul::Jpeg2000SubDescriptorSet) |
+              (true, _, _, _, _, _, _, _, Ul::MpegVideoDescriptorSet) |
+              (true, _, _, _, _, _, _, _, Ul::WaveAudioDescriptorSet) |
+              (true, _, _, _, _, _, _, _, Ul::Aes3AudioDescriptorSet) |
+              (true, _, _, _, _, _, _, _, Ul::EssenceContainerDataSet) |
+              (true, _, _, _, _, _, _, _, Ul::DmSegmentDescriptorSet) |
+              (true, _, _, _, _, _, _, _, Ul::AudioChannelLabelSubDescriptorSet) |
+              (true, _, _, _, _, _, _, _, Ul::SoundfieldGroupLabelSubDescriptorSet) |
+              (true, _, _, _, _, _, _, _, Ul::AS10CoreFramework) |
+              (_, true, _, _, _, _, _, _, Ul::FooterPartition{..}) |
+              (_, true, _, _, _, _, _, _, Ul::RandomIndexMetadata) |
+              (_, true, _, _, _, _, _, _, Ul::IndexTableSegment) |
+              (_, _, true, _, _, _, _, _, Ul::BodyPartition{..}) |
+              (_, _, _, true, _, _, _, _, Ul::PictureItemMpegFrameWrappedPictureElement) |
+              (_, _, _, true, _, _, _, _, Ul::Jpeg2000FrameWrapped) |
+              (_, _, _, true, _, _, _, _, Ul::Jpeg2000ClipWrapped) |
+              (_, _, _, _, true, _, _, _, Ul::SoundItemWaveDataWrappedSoundElement) |
+              (_, _, _, _, _, true, _, _, Ul::FillItem) |
+              (_, _, _, _, _, true, _, _, Ul::FillItemAvid) |
+              (_, _, _, _, _, _, true, _, Ul::SystemItemSystemMetadataPack) |
+              (_, _, _, _, _, _, true, _, Ul::SystemItemPackageMetadataSet) |
+              (_, _, _, _, _, _, _, true, Ul::Essence_AncFrameElement) => {
               },
               _ => {
                 println!("{:?}", klv);
-                // if klv.value.elements.len() == 1 {
-                //   match klv.value.elements[0].identifier {
-                //     ContentData{..} => {
-                //       println!("{:?}", klv);
-                //     },
-                //     _ => {}
-                //   }
-                // } else {
-                //   // println!("{:?}", klv);
-                // }
               },
             }
           },
