@@ -7,7 +7,7 @@ pub mod serializer;
 
 #[cfg(test)]
 mod test {
-  // use serializer::decoder::*;
+  use serializer::decoder::Decoder;
   use serializer::encoder::*;
   use klv::ul::Ul;
   use klv::klv::*;
@@ -27,10 +27,11 @@ mod test {
       elements: vec![]
     };
 
-    let result = next_klv(&mut reader);
+    let mut klv = Klv{..Default::default()};
+    let result = klv.deserialize(&mut reader);
 
     assert!(result.is_ok());
-    assert!(result.unwrap() == None);
+    assert!(result.unwrap() == false);
   }
 
   #[test]
@@ -63,9 +64,14 @@ mod test {
       elements: vec![]
     };
 
-    let valid_klv = next_klv(&mut reader).unwrap().unwrap();
-    
-    assert_eq!(valid_klv, Klv {
+
+    let mut klv = Klv{..Default::default()};
+    let result = klv.deserialize(&mut reader);
+
+    assert!(result.is_ok());
+    assert!(result.unwrap() == true);
+
+    assert_eq!(klv, Klv {
       key: Ul::HeaderPartition {
         status: Some(PartitionStatus::ClosedAndComplete)
       },

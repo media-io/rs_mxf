@@ -1,13 +1,14 @@
 
-use std::io::{Error, ErrorKind, Read};
+use std::io::{Error, ErrorKind, Read, Seek};
 use serializer::decoder::*;
+use klv::klv_reader::KlvReader;
 use klv::ul::Ul;
 use klv::ul::ul::*;
 
 impl Decoder for Ul {
-  fn deserialize<R: Read>(&mut self, stream: &mut R) -> Result<bool, Error> {
+  fn deserialize<R: Read + Seek>(&mut self, reader: &mut KlvReader<R>) -> Result<bool, Error> {
     let mut identifier_data = vec![0; 16];
-    match stream.read(&mut identifier_data) {
+    match reader.stream.read(&mut identifier_data) {
       Ok(16) => {
       },
       Ok(0) => {

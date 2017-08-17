@@ -8,7 +8,7 @@ use serializer::decoder::Decoder;
 use std::io::{Read, Seek};
 use timecode;
 
-pub fn parse_system_item_system<R: Read + Seek>(reader: &mut KlvReader<R>, _size: usize) -> Result<Vec<Element>, String> {
+pub fn parse_system_item_system<R: Read + Seek>(mut reader: &mut KlvReader<R>, _size: usize) -> Result<Vec<Element>, String> {
   
   let _smb = reader.stream.read_u8().unwrap();
   let _cpr = reader.stream.read_u8().unwrap();
@@ -18,7 +18,7 @@ pub fn parse_system_item_system<R: Read + Seek>(reader: &mut KlvReader<R>, _size
 
 
   let mut smpte_ul = Ul::Unknown;
-  match smpte_ul.deserialize(&mut reader.stream) {
+  match smpte_ul.deserialize(&mut reader) {
     Ok(_) => {},
     Err(msg) => return Err(msg.to_string())
   }

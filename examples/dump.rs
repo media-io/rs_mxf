@@ -8,12 +8,14 @@ use std::{env, process};
 use mxf::klv::klv::*;
 use mxf::klv::klv_reader::*;
 use mxf::klv::ul::Ul;
+use mxf::serializer::decoder::Decoder;
 
 fn display_error() {
   println!("ERROR: missing filepath argument.");
   println!("usage:");
   println!("       dump [-avhf] [filepath.mxf]");
   println!("");
+  println!(" --all: display all elements");
   println!(" -a, --audio: display audio elements");
   println!(" -v, --video: display video elements");
   println!(" -h, --header: display header elements");
@@ -58,8 +60,17 @@ fn main() {
   let mut path = None;
 
   for arg in env::args().skip(1) {
-    // println!("{:?}", arg);
     match arg.as_str() {
+      "--all" => {
+        options.filter_sound_wave = false;
+        options.filter_video_frame = false;
+        options.filter_header = false;
+        options.filter_footer = false;
+        options.filter_body = false;
+        options.filter_fill = false;
+        options.filter_system_item = false;
+        options.filter_anc = false;
+      },
       "-a" | "--audio" => {options.filter_sound_wave = false;},
       "-v" | "--video" => {options.filter_video_frame = false;},
       "-h" | "--header" => {options.filter_header = false;},
@@ -91,72 +102,69 @@ fn main() {
   };
 
   loop {
-    match next_klv(&mut reader) {
-      Ok(maybe_klv) => {
-        match maybe_klv {
-          Some(klv) => {
-            match (
-              options.filter_header,
-              options.filter_footer,
-              options.filter_body,
-              options.filter_video_frame,
-              options.filter_sound_wave,
-              options.filter_fill,
-              options.filter_system_item,
-              options.filter_anc,
-              klv.key.clone()) {
-              (true, _, _, _, _, _, _, _, Ul::HeaderPartition{..}) |
-              (true, _, _, _, _, _, _, _, Ul::PrimerPack) |
-              (true, _, _, _, _, _, _, _, Ul::MaterialPackageSet) |
-              (true, _, _, _, _, _, _, _, Ul::TrackSet) |
-              (true, _, _, _, _, _, _, _, Ul::StaticTrackSet) |
-              (true, _, _, _, _, _, _, _, Ul::ContentStorageSet) |
-              (true, _, _, _, _, _, _, _, Ul::FilePackageSet) |
-              (true, _, _, _, _, _, _, _, Ul::PrefaceSet) |
-              (true, _, _, _, _, _, _, _, Ul::SequenceSet) |
-              (true, _, _, _, _, _, _, _, Ul::SourceClipSet) |
-              (true, _, _, _, _, _, _, _, Ul::IdentificationSet) |
-              (true, _, _, _, _, _, _, _, Ul::TimecodeComponentSet) |
-              (true, _, _, _, _, _, _, _, Ul::MultipleDescriptorSet) |
-              (true, _, _, _, _, _, _, _, Ul::RgbaVideoDescriptor) |
-              (true, _, _, _, _, _, _, _, Ul::CdciVideoDescriptor) |
-              (true, _, _, _, _, _, _, _, Ul::Jpeg2000SubDescriptorSet) |
-              (true, _, _, _, _, _, _, _, Ul::MpegVideoDescriptorSet) |
-              (true, _, _, _, _, _, _, _, Ul::WaveAudioDescriptorSet) |
-              (true, _, _, _, _, _, _, _, Ul::Aes3AudioDescriptorSet) |
-              (true, _, _, _, _, _, _, _, Ul::EssenceContainerDataSet) |
-              (true, _, _, _, _, _, _, _, Ul::DmSegmentDescriptorSet) |
-              (true, _, _, _, _, _, _, _, Ul::AudioChannelLabelSubDescriptorSet) |
-              (true, _, _, _, _, _, _, _, Ul::SoundfieldGroupLabelSubDescriptorSet) |
-              (true, _, _, _, _, _, _, _, Ul::AS10CoreFramework) |
-              (_, true, _, _, _, _, _, _, Ul::FooterPartition{..}) |
-              (_, true, _, _, _, _, _, _, Ul::RandomIndexMetadata) |
-              (_, true, _, _, _, _, _, _, Ul::IndexTableSegment) |
-              (_, _, true, _, _, _, _, _, Ul::BodyPartition{..}) |
-              (_, _, _, true, _, _, _, _, Ul::PictureItemMpegFrameWrappedPictureElement) |
-              (_, _, _, true, _, _, _, _, Ul::Jpeg2000FrameWrapped) |
-              (_, _, _, true, _, _, _, _, Ul::Jpeg2000ClipWrapped) |
-              (_, _, _, _, true, _, _, _, Ul::SoundItemWaveDataWrappedSoundElement) |
-              (_, _, _, _, _, true, _, _, Ul::FillItem) |
-              (_, _, _, _, _, true, _, _, Ul::FillItemAvid) |
-              (_, _, _, _, _, _, true, _, Ul::SystemItemSystemMetadataPack) |
-              (_, _, _, _, _, _, true, _, Ul::SystemItemPackageMetadataSet) |
-              (_, _, _, _, _, _, _, true, Ul::Essence_AncFrameElement) => {
-              },
-              _ => {
-                println!("{:?}", klv);
-              },
-            }
+    let mut klv = Klv{..Default::default()};
+    match klv.deserialize(&mut reader) {
+      Ok(false) => {
+        break;
+      }
+      Ok(true) => {
+        match (
+          options.filter_header,
+          options.filter_footer,
+          options.filter_body,
+          options.filter_video_frame,
+          options.filter_sound_wave,
+          options.filter_fill,
+          options.filter_system_item,
+          options.filter_anc,
+          klv.key.clone()) {
+          (true, _, _, _, _, _, _, _, Ul::HeaderPartition{..}) |
+          (true, _, _, _, _, _, _, _, Ul::PrimerPack) |
+          (true, _, _, _, _, _, _, _, Ul::MaterialPackageSet) |
+          (true, _, _, _, _, _, _, _, Ul::TrackSet) |
+          (true, _, _, _, _, _, _, _, Ul::StaticTrackSet) |
+          (true, _, _, _, _, _, _, _, Ul::ContentStorageSet) |
+          (true, _, _, _, _, _, _, _, Ul::FilePackageSet) |
+          (true, _, _, _, _, _, _, _, Ul::PrefaceSet) |
+          (true, _, _, _, _, _, _, _, Ul::SequenceSet) |
+          (true, _, _, _, _, _, _, _, Ul::SourceClipSet) |
+          (true, _, _, _, _, _, _, _, Ul::IdentificationSet) |
+          (true, _, _, _, _, _, _, _, Ul::TimecodeComponentSet) |
+          (true, _, _, _, _, _, _, _, Ul::MultipleDescriptorSet) |
+          (true, _, _, _, _, _, _, _, Ul::RgbaVideoDescriptor) |
+          (true, _, _, _, _, _, _, _, Ul::CdciVideoDescriptor) |
+          (true, _, _, _, _, _, _, _, Ul::Jpeg2000SubDescriptorSet) |
+          (true, _, _, _, _, _, _, _, Ul::MpegVideoDescriptorSet) |
+          (true, _, _, _, _, _, _, _, Ul::WaveAudioDescriptorSet) |
+          (true, _, _, _, _, _, _, _, Ul::Aes3AudioDescriptorSet) |
+          (true, _, _, _, _, _, _, _, Ul::EssenceContainerDataSet) |
+          (true, _, _, _, _, _, _, _, Ul::DmSegmentDescriptorSet) |
+          (true, _, _, _, _, _, _, _, Ul::AudioChannelLabelSubDescriptorSet) |
+          (true, _, _, _, _, _, _, _, Ul::SoundfieldGroupLabelSubDescriptorSet) |
+          (true, _, _, _, _, _, _, _, Ul::AS10CoreFramework) |
+          (_, true, _, _, _, _, _, _, Ul::FooterPartition{..}) |
+          (_, true, _, _, _, _, _, _, Ul::RandomIndexMetadata) |
+          (_, true, _, _, _, _, _, _, Ul::IndexTableSegment) |
+          (_, _, true, _, _, _, _, _, Ul::BodyPartition{..}) |
+          (_, _, _, true, _, _, _, _, Ul::PictureItemMpegFrameWrappedPictureElement) |
+          (_, _, _, true, _, _, _, _, Ul::Jpeg2000FrameWrapped) |
+          (_, _, _, true, _, _, _, _, Ul::Jpeg2000ClipWrapped) |
+          (_, _, _, _, true, _, _, _, Ul::SoundItemWaveDataWrappedSoundElement) |
+          (_, _, _, _, _, true, _, _, Ul::FillItem) |
+          (_, _, _, _, _, true, _, _, Ul::FillItemAvid) |
+          (_, _, _, _, _, _, true, _, Ul::SystemItemSystemMetadataPack) |
+          (_, _, _, _, _, _, true, _, Ul::SystemItemPackageMetadataSet) |
+          (_, _, _, _, _, _, _, true, Ul::Essence_AncFrameElement) => {
           },
-          None => {
-            break;
+          _ => {
+            println!("{:?}", klv);
           },
         }
       },
       Err(msg) => {
         println!("ERROR: {:?}", msg);
         break;
-      },
+      }
     }
     
   }

@@ -1,13 +1,14 @@
 
 use byteorder::{ByteOrder, BigEndian};
-use std::io::{Error, Read};
+use std::io::{Error, Read, Seek};
 use serializer::decoder::*;
+use klv::klv_reader::KlvReader;
 use klv::length::Length;
 
 impl Decoder for Length {
-  fn deserialize<R: Read>(&mut self, stream: &mut R) -> Result<bool, Error> {
+  fn deserialize<R: Read + Seek>(&mut self, reader: &mut KlvReader<R>) -> Result<bool, Error> {
     let mut length = vec![0; 1];
-    match stream.read_exact(&mut length) {
+    match reader.stream.read_exact(&mut length) {
       Ok(()) => {},
       Err(msg) => {
         return Err(msg)
@@ -20,7 +21,7 @@ impl Decoder for Length {
     } else {
       let size = length[0] - 0x80;
       let mut data = vec![0; size as usize];
-      match stream.read_exact(&mut data) {
+      match reader.stream.read_exact(&mut data) {
         Ok(()) => {},
         Err(msg) => {
           return Err(msg)
