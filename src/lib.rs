@@ -9,7 +9,7 @@ pub mod serializer;
 mod test {
   // use serializer::decoder::*;
   use serializer::encoder::*;
-  use klv::ul::ul::*;
+  use klv::ul::Ul;
   use klv::klv::*;
   use klv::klv_reader::*;
   use klv::value::value::*;
