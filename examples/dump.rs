@@ -92,8 +92,6 @@ fn main() {
       },
     };
 
-  // println!("filter_video_frame {:?}", filter_video_frame);
-  // println!("filter_sound_wave {:?}", filter_sound_wave);
   let stream = BufReader::new(file);
 
   let mut reader = KlvReader{

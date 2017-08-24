@@ -2,14 +2,9 @@
 use byteorder::{BigEndian, WriteBytesExt};
 use serializer::encoder::*;
 use klv::ul::Ul;
-use klv::value::element::Element;
+use klv::value::Value;
 use klv::value::value_data::*;
 use klv::value::value_data_type::*;
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Value {
-  pub elements: Vec<Element>
-}
 
 impl Encoder for Value {
   fn serialise(&self) -> Vec<u8> {

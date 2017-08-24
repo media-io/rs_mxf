@@ -12,7 +12,7 @@ mod test {
   use klv::ul::Ul;
   use klv::klv::*;
   use klv::klv_reader::*;
-  use klv::value::value::*;
+  use klv::value::Value;
   use klv::value::value_data::*;
   use klv::value::partition::*;
   use klv::value::element::Element;

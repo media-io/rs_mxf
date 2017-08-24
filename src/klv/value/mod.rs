@@ -9,3 +9,10 @@ pub mod tag;
 pub mod value;
 pub mod value_data;
 pub mod value_data_type;
+
+use klv::value::element::Element;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Value {
+  pub elements: Vec<Element>
+}
