@@ -4,9 +4,16 @@ extern crate timecode;
 
 #[macro_use] pub mod klv;
 pub mod serializer;
+pub mod interface;
+
+pub use klv::ul::*;
+pub use klv::klv_reader::*;
+
+pub use interface::writer::*;
 
 #[cfg(test)]
 mod test {
+  use std::io::BufReader;
   use serializer::decoder::Decoder;
   use serializer::encoder::*;
   use klv::ul::Ul;
@@ -21,7 +28,8 @@ mod test {
   fn read_empty_file() {
     use std::io::Cursor;
 
-    let stream = Cursor::new(vec![0; 0]);
+    let data = Cursor::new(vec![0; 0]);
+    let stream = BufReader::new(data);
     let mut reader = KlvReader{
       stream: stream,
       elements: vec![]
@@ -58,7 +66,8 @@ mod test {
       0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x02, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x04, 0x60, 0x01, // Mpeg ES Video
     ];
 
-    let stream = Cursor::new(data);
+    let cursor = Cursor::new(data);
+    let stream = BufReader::new(cursor);
     let mut reader = KlvReader{
       stream: stream,
       elements: vec![]
@@ -73,7 +82,7 @@ mod test {
 
     assert_eq!(klv, Klv {
       key: Ul::HeaderPartition {
-        status: Some(PartitionStatus::ClosedAndComplete)
+        status: PartitionStatus::ClosedAndComplete
       },
       value: Value {
         elements: vec![
@@ -148,7 +157,7 @@ mod test {
 
     let header_klv = Klv {
       key: Ul::HeaderPartition {
-        status: Some(PartitionStatus::ClosedAndComplete)
+        status: PartitionStatus::ClosedAndComplete
       },
       value: header_value
     };

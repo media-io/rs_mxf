@@ -30,5 +30,26 @@ macro_rules! build_element {
         data: $value
       })
     }
+  );
+  ($ul:expr, ul => $value:expr) => (
+    Element { identifier: $ul,
+      value: Some( ValueData::Ul{
+        data: $value
+      })
+    }
+  );
+  ($ul:expr, array_ul => $value:expr) => (
+    Element { identifier: $ul,
+      value: Some( ValueData::ArrayUl{
+        data: $value
+      })
+    }
+  );
+  ($ul:expr, unknown => $value:expr) => (
+    Element { identifier: $ul,
+      value: Some( ValueData::Unknown{
+        data: $value
+      })
+    }
   )
 }

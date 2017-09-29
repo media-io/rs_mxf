@@ -21,7 +21,7 @@ pub fn parse_primer_pack<R: Read + Seek>(reader: &mut KlvReader<R>) -> Result<Ve
         let mut ul_data = vec![0; 16];
         try!(reader.stream.read_exact(&mut ul_data).map_err(|e| e.to_string()));
 
-        match match_ul(ul_data) {
+        match get_ul(ul_data) {
           Some(ul) => {
             let dynamic_tag = DynamicTag {
               tag: tag,
@@ -35,7 +35,10 @@ pub fn parse_primer_pack<R: Read + Seek>(reader: &mut KlvReader<R>) -> Result<Ve
         }
       }
     },
-    _ => unimplemented!(),
+    _ => {
+      // println!("{:?}", item_size);
+      unimplemented!()
+    },
   }
 
   Ok(vec![

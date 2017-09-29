@@ -1,6 +1,7 @@
 
-use klv::value::partition::*;
 use klv::ul::Ul;
+use klv::value::partition::*;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum SmpteRegitery {
@@ -18,10 +19,10 @@ macro_rules! tuple_to_vec {
 
 macro_rules! vec_ul {
   (Ul::OperationalPattern) => (tuple_to_vec!(smpte_identifier!(Ul::OperationalPattern)););
-  (Ul::HeaderPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::HeaderPartition{status: None}, $status)););
-  (Ul::BodyPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::BodyPartition{status: None}, $status)));
-  (Ul::FooterPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::FooterPartition{status: None}, $status)));
-  (Ul::PrimerPack, $status:expr) => (tuple_to_vec!(smpte_identifier!(SmpteRegitery::Partition, 0x05, 0x00)));
+  (Ul::HeaderPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::HeaderPartition{status: $status}, $status)););
+  (Ul::BodyPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::BodyPartition{status: $status}, $status)));
+  (Ul::FooterPartition, $status:expr) => (tuple_to_vec!(partition_identifier!(Ul::FooterPartition{status: $status}, $status)));
+  (Ul::PrimerPack) => (tuple_to_vec!(smpte_identifier!(SmpteRegitery::Partition, 0x05, 0x00)));
   (Ul::RandomIndexMetadata) => (tuple_to_vec!(partition_identifier!(Ul::RandomIndexMetadata)));
   (Ul::StaticTrack) => (tuple_to_vec!(smpte_identifier!(SmpteRegitery::Set, 0x3a)));
   (Ul::Track) => (tuple_to_vec!(smpte_identifier!(SmpteRegitery::Set, 0x3b)));
@@ -64,6 +65,10 @@ macro_rules! vec_ul {
   (Ul::McaLabelSubDescriptorSet) => (tuple_to_vec!(smpte_identifier!(SmpteRegitery::Set, 0x6a)));
   (Ul::AudioChannelLabelSubDescriptorSet) => (tuple_to_vec!(smpte_identifier!(SmpteRegitery::Set, 0x6b)));
   (Ul::SoundfieldGroupLabelSubDescriptorSet) => (tuple_to_vec!(smpte_identifier!(SmpteRegitery::Set, 0x6c)));
+
+
+  (Ul::MxfOP1aSingleItemSinglePackageUniTrackStreamInternal) => (tuple_to_vec!(smpte_identifier!(0x04, 0x01, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x01, 0x01, 0x01, 0x00)));
+  (Ul::Essence_Jpeg2000_FrameWrapped) => (tuple_to_vec!(build_identifier!(version_number => 0x07, jpeg2000 => 0x06)));
 }
 
 macro_rules! ul_filter {
@@ -202,57 +207,61 @@ macro_rules! smpte_identifier {
   );
 }
 
-pub fn match_ul(data: Vec<u8>) -> Option<Ul> {
-  get_ul(data)
+fn get_sets_definition() -> HashMap<u8, Ul> {
+  [
+    (0x0f, Ul::SequenceSet),
+    (0x11, Ul::SourceClipSet),
+    (0x14, Ul::TimecodeComponentSet),
+    (0x18, Ul::ContentStorageSet),
+    (0x23, Ul::EssenceContainerDataSet),
+    (0x25, Ul::FileDescriptorSet),
+    (0x27, Ul::GenericPictureEssenceDescriptor),
+    (0x28, Ul::CdciVideoDescriptor),
+    (0x29, Ul::RgbaVideoDescriptor),
+    (0x2f, Ul::PrefaceSet),
+    (0x30, Ul::IdentificationSet),
+    (0x32, Ul::NetworkLocatorSet),
+    (0x33, Ul::TextLocatorSet),
+    (0x36, Ul::MaterialPackageSet),
+    (0x37, Ul::FilePackageSet),
+    (0x3a, Ul::StaticTrackSet),
+    (0x3b, Ul::TrackSet),
+    (0x39, Ul::EventTrackSet),
+    (0x41, Ul::DmSegmentDescriptorSet),
+    (0x42, Ul::GenericSoundEssenceDescriptorSet),
+    (0x43, Ul::GenericDataEssenceDescriptorSet),
+    (0x44, Ul::MultipleDescriptorSet),
+    (0x45, Ul::DmSourceClipSet),
+    (0x47, Ul::Aes3AudioDescriptorSet),
+    (0x48, Ul::WaveAudioDescriptorSet),
+    (0x51, Ul::MpegVideoDescriptorSet),
+    (0x5a, Ul::Jpeg2000SubDescriptorSet),
+    (0x6a, Ul::McaLabelSubDescriptorSet),
+    (0x6b, Ul::AudioChannelLabelSubDescriptorSet),
+    (0x6c, Ul::SoundfieldGroupLabelSubDescriptorSet)
+  ].iter().cloned().collect()
 }
 
 fn get_sets_kind(v: u8) -> Ul {
-  match v {
-    0x0f => Ul::SequenceSet,
-    0x11 => Ul::SourceClipSet,
-    0x14 => Ul::TimecodeComponentSet,
-    0x18 => Ul::ContentStorageSet,
-    0x23 => Ul::EssenceContainerDataSet,
-    0x25 => Ul::FileDescriptorSet,
-    0x27 => Ul::GenericPictureEssenceDescriptor,
-    0x28 => Ul::CdciVideoDescriptor,
-    0x29 => Ul::RgbaVideoDescriptor,
-    0x2f => Ul::PrefaceSet,
-    0x30 => Ul::IdentificationSet,
-    0x32 => Ul::NetworkLocatorSet,
-    0x33 => Ul::TextLocatorSet,
-    0x36 => Ul::MaterialPackageSet,
-    0x37 => Ul::FilePackageSet,
-    0x3a => Ul::StaticTrackSet,
-    0x3b => Ul::TrackSet,
-    0x39 => Ul::EventTrackSet,
-    0x41 => Ul::DmSegmentDescriptorSet,
-    0x42 => Ul::GenericSoundEssenceDescriptorSet,
-    0x43 => Ul::GenericDataEssenceDescriptorSet,
-    0x44 => Ul::MultipleDescriptorSet,
-    0x45 => Ul::DmSourceClipSet,
-    0x47 => Ul::Aes3AudioDescriptorSet,
-    0x48 => Ul::WaveAudioDescriptorSet,
-    0x51 => Ul::MpegVideoDescriptorSet,
-    0x5a => Ul::Jpeg2000SubDescriptorSet,
-    0x6a => Ul::McaLabelSubDescriptorSet,
-    0x6b => Ul::AudioChannelLabelSubDescriptorSet,
-    0x6c => Ul::SoundfieldGroupLabelSubDescriptorSet,
-       _ => Ul::Unknown,
+  let set_map = get_sets_definition();
+
+  match set_map.get(&v) {
+      Some(ul) => ul.clone(),
+      None => Ul::Unknown,
   }
 }
 
-fn get_ul(data: Vec<u8>) -> Option<Ul> {
+pub fn get_ul(data: Vec<u8>) -> Option<Ul> {
   let ul =
     match (data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]) {
       ul_filter!(Ul::HeaderPartition) => {
-        Ul::HeaderPartition{status: Some(parse_status(data[14]))}
+        Ul::HeaderPartition{status: parse_status(data[14])}
       },
       ul_filter!(Ul::BodyPartition) => {
-        Ul::BodyPartition{status: Some(parse_status(data[14]))}
+        Ul::BodyPartition{status: parse_status(data[14])}
       },
       ul_filter!(Ul::FooterPartition) => {
-        Ul::FooterPartition{status: Some(parse_status(data[14]))}
+        Ul::FooterPartition{status: parse_status(data[14])}
       },
       ul_filter!(Ul::PrimerPack) => {
         Ul::PrimerPack
@@ -499,6 +508,10 @@ fn get_ul(data: Vec<u8>) -> Option<Ul> {
       smpte_identifier!(0x01, 0x01, 0x01, 0x02, 0x05, 0x20, 0x07, 0x01, 0x08, 0x00, 0x00, 0x00) =>
         Ul::LinkedGenerationID,
 
+      smpte_identifier!(0x04, 0x01, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01, 0x10, 0x00, 0x00, 0x00) =>
+        Ul::MXFInterop_OPAtom,
+      smpte_identifier!(0x04, 0x01, 0x01, 0x02, 0x0d, 0x01, 0x02, 0x01, 0x10, 0x00, 0x00, 0x00) =>
+        Ul::OPAtom,
       smpte_identifier!(0x01, 0x01, 0x01, 0x05, 0x01, 0x02, 0x02, 0x03, 0x00, 0x00, 0x00, 0x00) =>
         Ul::OperationalPattern,
       smpte_identifier!(0x01, 0x01, 0x01, 0x05, 0x01, 0x02, 0x02, 0x10, 0x02, 0x01, 0x00, 0x00) =>
@@ -724,6 +737,12 @@ fn get_ul(data: Vec<u8>) -> Option<Ul> {
         Ul::JPEG2000BroadcastContributionMultiTileReversibleProfileLevel6,
       smpte_identifier!(0x04, 0x01, 0x01, 0x0a, 0x04, 0x01, 0x02, 0x02, 0x03, 0x01, 0x01, 0x7f) =>
         Ul::JPEG2000UndefinedDigitalCinemaProfile,
+
+      smpte_identifier!(0x04, 0x01, 0x01, 0x02, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x04, 0x60, 0x00) =>
+        Ul::MXFGCFrameWrappedMPEGESVideoStream0SID,
+      smpte_identifier!(0x04, 0x01, 0x01, 0x02, 0x0d, 0x01, 0x03, 0x01, 0x02, 0x04, 0x60, 0x01) =>
+        Ul::MXFGCClipWrappedMPEGESVideoStream0SID,
+
 
       smpte_identifier!(0x01, 0x01, 0x01, 0x0e, 0x04, 0x01, 0x06, 0x03, 0x0e, 0x00, 0x00, 0x00) =>
         Ul::Jpeg2000VideoDescriptor_J2CLayout,
@@ -1205,13 +1224,13 @@ mod test {
   fn ul_detection_and_generation() {
     let uls = vec![
       Ul::HeaderPartition {
-        status: Some(PartitionStatus::ClosedAndComplete)
+        status: PartitionStatus::ClosedAndComplete
       },
       Ul::BodyPartition {
-        status: Some(PartitionStatus::ClosedAndComplete)
+        status: PartitionStatus::ClosedAndComplete
       },
       Ul::FooterPartition {
-        status: Some(PartitionStatus::ClosedAndComplete)
+        status: PartitionStatus::ClosedAndComplete
       },
       Ul::PrimerPack,
     ];
@@ -1219,7 +1238,7 @@ mod test {
     for ul in uls {
       let vec_ul = Encoder::serialise(&ul);
       println!("{:?}", vec_ul);
-      let ul_back = match_ul(vec_ul).unwrap();
+      let ul_back = get_ul(vec_ul).unwrap();
       println!("{:?}", ul_back);
       assert_eq!(ul, ul_back);
     }

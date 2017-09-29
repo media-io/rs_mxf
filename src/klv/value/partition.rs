@@ -48,13 +48,19 @@ pub fn parse_partition<R: Read>(stream: &mut R) -> Result<Vec<Element>, String> 
   for _index in 0..count_ul_essences {
     let mut essence_ul = vec![0; 16];
     stream.read_exact(&mut essence_ul).unwrap();
-    match match_ul(essence_ul) {
+    match get_ul(essence_ul) {
       Some(essence_kind) => {
         essences_kind.push(essence_kind);
       },
       None => {}
     }
   }
+
+  let operational_pattern_ul =
+    match get_ul(op_ul) {
+        Some(ul) => ul,
+        None => unimplemented!(),
+    };
 
   Ok(vec![
     build_element!(Ul::PartitionMajor, uint16 => partition_major),
@@ -71,7 +77,7 @@ pub fn parse_partition<R: Read>(stream: &mut R) -> Result<Vec<Element>, String> 
     Element {
       identifier: Ul::PartitionOperationalPattern,
       value: Some(ValueData::Ul{
-        data: match_ul(op_ul).unwrap()
+        data: operational_pattern_ul
       })
     },
     Element {

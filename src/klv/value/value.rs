@@ -5,6 +5,7 @@ use klv::ul::Ul;
 use klv::value::Value;
 use klv::value::value_data::*;
 use klv::value::value_data_type::*;
+use std::io::Write;
 
 impl Encoder for Value {
   fn serialise(&self) -> Vec<u8> {
@@ -82,6 +83,18 @@ impl Encoder for Value {
           }
         },
         _ => {
+          match element.value.unwrap() {
+            ValueData::Ul{data} => {
+              let mut ul_data = Encoder::serialise(&data);
+              result.append(&mut ul_data);
+            },
+            ValueData::Unknown{data} => {
+              result.write(&data).unwrap();
+            },
+            _ => {
+              panic!("impossible to serialise data");
+            }
+          };
         }
       }
     }

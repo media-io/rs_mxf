@@ -7,10 +7,11 @@ use klv::value::partition::*;
 
 #[derive(Debug, Clone, PartialEq)]
 #[allow(non_camel_case_types)]
+// #[repr(C)]
 pub enum Ul {
-  HeaderPartition {status: Option<PartitionStatus>},
-  BodyPartition {status: Option<PartitionStatus>},
-  FooterPartition {status: Option<PartitionStatus>},
+  HeaderPartition{status: PartitionStatus},
+  BodyPartition{status: PartitionStatus},
+  FooterPartition{status: PartitionStatus},
   PrimerPack,
   RandomIndexMetadata,
   SequenceSet,
@@ -163,6 +164,8 @@ pub enum Ul {
 
   LinkedGenerationID,
 
+  MXFInterop_OPAtom,
+  OPAtom,
   OperationalPattern,
   EssenceContainers,
   IsRipPresent,
@@ -249,6 +252,9 @@ pub enum Ul {
   JPEG2000BroadcastContributionSingleTileProfileLevel5,
   JPEG2000BroadcastContributionMultiTileReversibleProfileLevel6,
   JPEG2000UndefinedDigitalCinemaProfile,
+
+  MXFGCFrameWrappedMPEGESVideoStream0SID,
+  MXFGCClipWrappedMPEGESVideoStream0SID,
 
   Jpeg2000VideoDescriptor_Rsiz,
   Jpeg2000VideoDescriptor_Xsiz,

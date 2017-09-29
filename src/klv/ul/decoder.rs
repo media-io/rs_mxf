@@ -22,7 +22,7 @@ impl Decoder for Ul {
       },
     };
 
-    match match_ul(identifier_data) {
+    match get_ul(identifier_data) {
       Some(ul) => {
         *self = ul;
       },

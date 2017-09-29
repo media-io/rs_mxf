@@ -3,6 +3,7 @@ use klv::ul::Ul;
 use klv::value::Value;
 
 #[derive(Debug, PartialEq)]
+#[repr(C)]
 pub struct Klv {
   pub key: Ul,
   pub value: Value
